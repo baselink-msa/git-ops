@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: baselink-dev
+
+resources:
+  - ../../base
+
+images:
+  - name: auth-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-auth-service
+    newTag: dev
+  - name: game-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-game-service
+    newTag: dev
+  - name: admin-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-admin-service
+    newTag: dev
+  - name: waiting-room-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-waiting-room-service
+    newTag: dev
+  - name: ticket-worker-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-worker-service
+    newTag: dev
+  - name: seat-lock-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-seat-lock-service
+    newTag: dev
+  - name: ticket-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-service
+    newTag: dev
+  - name: order-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-order-service
+    newTag: dev
+  - name: ai-chatbot-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ai-chatbot-service
+    newTag: dev

@@ -1,0 +1,299 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: auth-service
+          image: auth-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 40
+            periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: game-service
+  template:
+    metadata:
+      labels:
+        app: game-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: game-service
+          image: game-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 40
+            periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: admin-service
+          image: admin-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 40
+            periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waiting-room-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: waiting-room-service
+  template:
+    metadata:
+      labels:
+        app: waiting-room-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: waiting-room-service
+          image: waiting-room-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-worker-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ticket-worker-service
+  template:
+    metadata:
+      labels:
+        app: ticket-worker-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: ticket-worker-service
+          image: ticket-worker-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seat-lock-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seat-lock-service
+  template:
+    metadata:
+      labels:
+        app: seat-lock-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: seat-lock-service
+          image: seat-lock-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ticket-service
+  template:
+    metadata:
+      labels:
+        app: ticket-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: ticket-service
+          image: ticket-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8087
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: order-service
+          image: order-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-chatbot-service
+  namespace: baselink-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-chatbot-service
+  template:
+    metadata:
+      labels:
+        app: ai-chatbot-service
+    spec:
+      serviceAccountName: backend-runtime
+      containers:
+        - name: ai-chatbot-service
+          image: ai-chatbot-service:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
