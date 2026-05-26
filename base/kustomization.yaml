@@ -7,3 +7,4 @@ resources:
   - configmap.yaml
   - workloads.yaml
   - services.yaml
+  - ingress.yaml

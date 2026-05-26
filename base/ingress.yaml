@@ -1,0 +1,73 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: baselink-api
+  namespace: baselink-dev
+  annotations:
+    alb.ingress.kubernetes.io/group.name: baselink-dev-api
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/success-codes: "200-404"
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8081
+          - path: /api/games
+            pathType: Prefix
+            backend:
+              service:
+                name: game-service
+                port:
+                  number: 8082
+          - path: /api/admin
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-service
+                port:
+                  number: 8083
+          - path: /api/waiting-room
+            pathType: Prefix
+            backend:
+              service:
+                name: waiting-room-service
+                port:
+                  number: 8084
+          - path: /api/chatbot
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-chatbot-service
+                port:
+                  number: 8000
+          - path: /api/orders
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8001
+          - path: /api/seats/locks
+            pathType: Prefix
+            backend:
+              service:
+                name: seat-lock-service
+                port:
+                  number: 8086
+          - path: /api/tickets
+            pathType: Prefix
+            backend:
+              service:
+                name: ticket-service
+                port:
+                  number: 8087
