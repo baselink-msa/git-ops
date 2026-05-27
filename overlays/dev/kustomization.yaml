@@ -24,7 +24,7 @@ images:
   newTag: b2164a8120a693e9053622fe785a5adbcf7508fe
 - name: seat-lock-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-seat-lock-service
-  newTag: cb846177f46fd627fccd8a4eddac996ac1ab76e0
+  newTag: 935162681553bce855e7aaabc3be7c2f8cdaee12
 - name: ticket-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-service
   newTag: 2b9ace55dec528e379da284caed3f4af86810328
