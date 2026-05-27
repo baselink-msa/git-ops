@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: baselink-dev
 
 resources:
-  - ../../base
+- ../../base
 
 images:
   - name: auth-service
