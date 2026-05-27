@@ -7,30 +7,30 @@ resources:
 - ../../base
 
 images:
-- name: admin-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-admin-service
-  newTag: 99791854ff6fe9bf9826ff5464e7a31d17771492
-- name: ai-chatbot-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ai-chatbot-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
-- name: auth-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-auth-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
-- name: game-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-game-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
-- name: order-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-order-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
-- name: seat-lock-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-seat-lock-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
-- name: ticket-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
-- name: ticket-worker-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-worker-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
-- name: waiting-room-service
-  newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-waiting-room-service
-  newTag: 3f5ebdf30e55c65d4fcb12d54e460e4916627719
+  - name: auth-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-auth-service
+    newTag: dev-9979185
+  - name: game-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-game-service
+    newTag: dev-9979185
+  - name: admin-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-admin-service
+    newTag: dev-9979185
+  - name: waiting-room-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-waiting-room-service
+    newTag: dev-9979185
+  - name: ticket-worker-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-worker-service
+    newTag: dev-9979185
+  - name: seat-lock-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-seat-lock-service
+    newTag: dev-9979185
+  - name: ticket-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-service
+    newTag: dev-9979185
+  - name: order-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-order-service
+    newTag: dev-9979185
+  - name: ai-chatbot-service
+    newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ai-chatbot-service
+    newTag: dev-9979185
