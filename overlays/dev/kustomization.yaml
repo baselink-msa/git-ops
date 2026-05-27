@@ -21,7 +21,7 @@ images:
   newTag: cb846177f46fd627fccd8a4eddac996ac1ab76e0
 - name: order-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-order-service
-  newTag: cb846177f46fd627fccd8a4eddac996ac1ab76e0
+  newTag: b2164a8120a693e9053622fe785a5adbcf7508fe
 - name: seat-lock-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-seat-lock-service
   newTag: cb846177f46fd627fccd8a4eddac996ac1ab76e0
