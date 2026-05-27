@@ -42,13 +42,12 @@ INSERT INTO game_schema.stadiums (
     capacity,
     created_at
 )
-VALUES (
-    1,
-    'Jamsil Baseball Stadium',
-    'Seoul',
-    25000,
-    now()
-)
+VALUES
+    (1, '잠실야구장', '서울 송파구', 25000, now()),
+    (2, '광주-KIA 챔피언스 필드', '광주 북구', 20500, now()),
+    (3, '대구 삼성 라이온즈 파크', '대구 수성구', 24000, now()),
+    (4, '사직야구장', '부산 동래구', 23500, now()),
+    (5, '인천 SSG 랜더스필드', '인천 미추홀구', 23000, now())
 ON CONFLICT (stadium_id) DO UPDATE
 SET
     name = EXCLUDED.name,
