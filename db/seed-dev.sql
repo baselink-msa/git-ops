@@ -161,24 +161,33 @@ INSERT INTO game_schema.stadiums (stadium_id, name, location, capacity, created_
 ON CONFLICT (stadium_id) DO UPDATE SET name=EXCLUDED.name, location=EXCLUDED.location, capacity=EXCLUDED.capacity;
 SELECT setval('game_schema.stadiums_stadium_id_seq', 5);
 
--- 3-3. 좌석 구역 (잠실 5구역)
-INSERT INTO game_schema.seat_sections (section_id, stadium_id, section_name, price, created_at) VALUES
-(1, 1, '1루 내야석', 50000, now()),
-(2, 1, '3루 내야석', 50000, now()),
-(3, 1, '중앙 테이블석', 80000, now()),
-(4, 1, '외야석', 20000, now()),
-(5, 1, '응원석', 15000, now())
-ON CONFLICT (section_id) DO UPDATE SET stadium_id=EXCLUDED.stadium_id, section_name=EXCLUDED.section_name, price=EXCLUDED.price;
-SELECT setval('game_schema.seat_sections_section_id_seq', 5);
+-- 3-3. 좌석 구역 (모든 구장 동일 5구역)
+INSERT INTO game_schema.seat_sections (stadium_id, section_name, price, created_at)
+SELECT s.stadium_id, sec.name, sec.price, now()
+FROM game_schema.stadiums s
+CROSS JOIN (VALUES
+  ('1루 내야석', 50000),
+  ('3루 내야석', 50000),
+  ('중앙 테이블석', 80000),
+  ('외야석', 20000),
+  ('응원석', 15000)
+) AS sec(name, price)
+WHERE NOT EXISTS (
+  SELECT 1 FROM game_schema.seat_sections ss
+  WHERE ss.stadium_id = s.stadium_id AND ss.section_name = sec.name
+);
 
--- 3-4. 좌석 200석 (구역당 4열 x 10번 = 40석, 5구역)
-DELETE FROM ticket_schema.game_seats;
-DELETE FROM ticket_schema.seats;
+-- 3-4. 좌석 (구장당 5구역 x 4열 x 10번 = 200석)
 INSERT INTO ticket_schema.seats (stadium_id, section_id, seat_row, seat_number, created_at)
-SELECT 1, s.section_id, r.row_name, n.num::text, now()
-FROM (VALUES (1),(2),(3),(4),(5)) AS s(section_id)
+SELECT ss.stadium_id, ss.section_id, r.row_name, n.num::text, now()
+FROM game_schema.seat_sections ss
 CROSS JOIN (VALUES ('A'),('B'),('C'),('D')) AS r(row_name)
-CROSS JOIN generate_series(1, 10) AS n(num);
+CROSS JOIN generate_series(1, 10) AS n(num)
+WHERE NOT EXISTS (
+  SELECT 1 FROM ticket_schema.seats s2
+  WHERE s2.stadium_id = ss.stadium_id AND s2.section_id = ss.section_id
+    AND s2.seat_row = r.row_name AND s2.seat_number = n.num::text
+);
 
 -- 3-5. 경기 2개
 INSERT INTO game_schema.games (game_id, home_team_name, away_team_name, stadium_id, game_start_time, ticket_open_time, status, created_at) VALUES
@@ -187,18 +196,17 @@ INSERT INTO game_schema.games (game_id, home_team_name, away_team_name, stadium_
 ON CONFLICT (game_id) DO UPDATE SET home_team_name=EXCLUDED.home_team_name, away_team_name=EXCLUDED.away_team_name, stadium_id=EXCLUDED.stadium_id, game_start_time=EXCLUDED.game_start_time, ticket_open_time=EXCLUDED.ticket_open_time, status=EXCLUDED.status;
 SELECT setval('game_schema.games_game_id_seq', 2);
 
--- 3-6. 경기1에 좌석 연결 (잠실 200석)
+-- 3-6. 경기에 좌석 자동 연결 (해당 구장의 모든 좌석)
 INSERT INTO ticket_schema.game_seats (game_id, seat_id, status, price, updated_at)
-SELECT 1, s.seat_id, 'AVAILABLE',
-  CASE s.section_id
-    WHEN 1 THEN 50000
-    WHEN 2 THEN 50000
-    WHEN 3 THEN 80000
-    WHEN 4 THEN 20000
-    WHEN 5 THEN 15000
-  END,
+SELECT g.game_id, s.seat_id, 'AVAILABLE',
+  COALESCE(ss.price, 30000),
   now()
-FROM ticket_schema.seats s WHERE s.stadium_id = 1;
+FROM game_schema.games g
+JOIN ticket_schema.seats s ON s.stadium_id = g.stadium_id
+LEFT JOIN game_schema.seat_sections ss ON ss.section_id = s.section_id
+WHERE NOT EXISTS (
+  SELECT 1 FROM ticket_schema.game_seats gs WHERE gs.game_id = g.game_id AND gs.seat_id = s.seat_id
+);
 
 -- 3-7. 대기열 정책
 INSERT INTO game_schema.waiting_room_policies (game_id, max_enter_per_minute, token_ttl_seconds, enabled, created_at, updated_at) VALUES
