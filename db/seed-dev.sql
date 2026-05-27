@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS ticket_schema.game_seats (
     seat_id BIGINT REFERENCES ticket_schema.seats(seat_id),
     status VARCHAR(30) NOT NULL DEFAULT 'AVAILABLE',
     price INTEGER NOT NULL DEFAULT 0,
-    updated_at TIMESTAMP DEFAULT now()
+    updated_at TIMESTAMP DEFAULT now(),
+    CONSTRAINT game_seats_status_check CHECK (status IN ('AVAILABLE', 'SOLD', 'BLOCKED', 'LOCKED'))
 );
 
 CREATE TABLE IF NOT EXISTS ticket_schema.reservations (
