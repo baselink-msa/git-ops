@@ -82,6 +82,14 @@ CREATE TABLE IF NOT EXISTS ticket_schema.game_seats (
     CONSTRAINT game_seats_status_check CHECK (status IN ('AVAILABLE', 'SOLD', 'BLOCKED', 'LOCKED'))
 );
 
+-- 기존 테이블에 제약조건이 이미 있을 경우 LOCKED 추가
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'game_seats_status_check') THEN
+    ALTER TABLE ticket_schema.game_seats DROP CONSTRAINT game_seats_status_check;
+    ALTER TABLE ticket_schema.game_seats ADD CONSTRAINT game_seats_status_check CHECK (status IN ('AVAILABLE', 'SOLD', 'BLOCKED', 'LOCKED'));
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS ticket_schema.reservations (
     reservation_id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
