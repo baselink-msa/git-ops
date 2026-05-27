@@ -8,3 +8,4 @@ resources:
   - workloads.yaml
   - services.yaml
   - ingress.yaml
+  - ingress-argocd.yaml
