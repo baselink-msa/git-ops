@@ -12,7 +12,7 @@ images:
   newTag: d523b370630a9657447c0714259973706cd3c362
 - name: ai-chatbot-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ai-chatbot-service
-  newTag: cb846177f46fd627fccd8a4eddac996ac1ab76e0
+  newTag: b2164a8120a693e9053622fe785a5adbcf7508fe
 - name: auth-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-auth-service
   newTag: cb846177f46fd627fccd8a4eddac996ac1ab76e0
