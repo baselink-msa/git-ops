@@ -1,0 +1,192 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: ticket-worker-sqs-auth
+  namespace: baselink-dev
+spec:
+  podIdentity:
+    provider: aws
+    identityOwner: workload
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ticket-worker-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: ticket-worker-service
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 15
+  cooldownPeriod: 300
+  triggers:
+    - type: aws-sqs-queue
+      metadata:
+        queueURL: https://sqs.ap-northeast-2.amazonaws.com/740831361032/ticket-confirm-queue
+        queueLength: "5"
+        awsRegion: ap-northeast-2
+      authenticationRef:
+        name: ticket-worker-sqs-auth
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ticket-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: ticket-service
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: "50 13 * * *"
+        end: "30 15 * * *"
+        desiredReplicas: "4"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: seat-lock-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: seat-lock-service
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: "50 13 * * *"
+        end: "30 15 * * *"
+        desiredReplicas: "4"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: waiting-room-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: waiting-room-service
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: "50 13 * * *"
+        end: "30 15 * * *"
+        desiredReplicas: "6"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: auth-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: auth-service
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: game-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: game-service
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: order-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: order-service
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ai-chatbot-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: ai-chatbot-service
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: admin-service-scaler
+  namespace: baselink-dev
+spec:
+  scaleTargetRef:
+    name: admin-service
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
