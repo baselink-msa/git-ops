@@ -8,3 +8,5 @@ resources:
   - workloads.yaml
   - services.yaml
   - ingress.yaml
+  - keda.yaml
+  - pdb.yaml

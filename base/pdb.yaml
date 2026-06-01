@@ -1,0 +1,62 @@
+# PDB 적용: ticket·seat-lock·waiting-room·auth·order (KEDA minReplicaCount>=2)
+# PDB 미적용: game·ai-chatbot·admin·ticket-worker (KEDA minReplicaCount=1)
+#   - minAvailable=1 + 단일 replica = drain 영구 차단 anti-pattern
+#   - maxUnavailable=1 도 1-replica 엔 무의미 (유일 pod 그냥 evict)
+#   - 자연 복구 매커니즘으로 갭 흡수:
+#     · ticket-worker: SQS 메시지 재처리 보장 → 비즈니스 영향 없음
+#     · game/admin: client retry 자연 흡수, 내부 도구
+#     · ai-chatbot: chat retry 자연스러움
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ticket-service-pdb
+  namespace: baselink-dev
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: ticket-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: seat-lock-service-pdb
+  namespace: baselink-dev
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: seat-lock-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: waiting-room-service-pdb
+  namespace: baselink-dev
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: waiting-room-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth-service-pdb
+  namespace: baselink-dev
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: auth-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-service-pdb
+  namespace: baselink-dev
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: order-service
