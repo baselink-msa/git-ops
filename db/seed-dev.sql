@@ -20,7 +20,7 @@
 --     kubectl exec -i -n baselink-dev psql-inspect -- psql -v ON_ERROR_STOP=1
 -- =============================================================================
 
-BEGIN;
+-- BEGIN transaction removed for idempotent execution
 
 -- =============================================================================
 -- 1. Schemas
@@ -112,6 +112,13 @@ CREATE TABLE IF NOT EXISTS ticket_schema.waiting_room_policies (
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now()
 );
+
+-- game_id unique constraint 보장 (JPA가 먼저 만들었을 경우 누락될 수 있음)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'waiting_room_policies_game_id_key') THEN
+    ALTER TABLE ticket_schema.waiting_room_policies ADD CONSTRAINT waiting_room_policies_game_id_key UNIQUE (game_id);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS order_schema.alcohol_menus (
     menu_id BIGSERIAL PRIMARY KEY,
@@ -392,4 +399,4 @@ SELECT setval('auth_schema.users_user_id_seq', GREATEST((SELECT MAX(user_id) FRO
 SELECT setval('ticket_schema.seats_seat_id_seq', GREATEST((SELECT MAX(seat_id) FROM ticket_schema.seats), 1));
 SELECT setval('ticket_schema.game_seats_game_seat_id_seq', GREATEST((SELECT MAX(game_seat_id) FROM ticket_schema.game_seats), 1));
 
-COMMIT;
+-- COMMIT removed
