@@ -1,3 +1,11 @@
+# Resource 설정 의도
+#   CPU limits 의도적 생략: CPU=compressible 자원
+#     - limit 두면 CFS throttling 발생 → 지연(p99) 악화
+#     - Karpenter bin-packing 은 requests 기준이라 limits 없어도 안전
+#     - 경합 시 requests 비율대로 공정 분배 → noisy neighbor 방어
+#   Memory limits 만 유지: non-compressible → OOM 격리 필수
+#   replicas 필드 부재: HPA/KEDA 단독 관리 (K8s 권장 패턴)
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,6 +22,13 @@ spec:
     spec:
       nodeSelector:
         workload-class: critical
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: auth-service
       serviceAccountName: backend-runtime
       containers:
         - name: auth-service
@@ -155,6 +170,13 @@ spec:
     spec:
       nodeSelector:
         workload-class: critical
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: waiting-room-service
       serviceAccountName: backend-runtime
       containers:
         - name: waiting-room-service
@@ -237,6 +259,13 @@ spec:
     spec:
       nodeSelector:
         workload-class: critical
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: seat-lock-service
       serviceAccountName: backend-runtime
       containers:
         - name: seat-lock-service
@@ -284,6 +313,13 @@ spec:
     spec:
       nodeSelector:
         workload-class: critical
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: ticket-service
       serviceAccountName: backend-runtime
       containers:
         - name: ticket-service
@@ -329,8 +365,18 @@ spec:
       labels:
         app: order-service
     spec:
+      # general NodePool 배치 이유: order = 매점·굿즈 주문 (티켓 결제는 ticket-service 가 처리)
+      # Spot 회수 시에도 SQS·DB 트랜잭션 + client retry 로 흡수 → general 으로 비용 최적화
+      # 결제성 트랜잭션 변경 시 재검토 필요
       nodeSelector:
         workload-class: general
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: order-service
       serviceAccountName: backend-runtime
       containers:
         - name: order-service
@@ -355,6 +401,12 @@ spec:
               port: 8001
             initialDelaySeconds: 10
             periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8001
+            initialDelaySeconds: 40
+            periodSeconds: 20
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -396,3 +448,9 @@ spec:
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 40
+            periodSeconds: 20
