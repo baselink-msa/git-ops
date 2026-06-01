@@ -20,11 +20,18 @@ spec:
       labels:
         app: auth-service
     spec:
+      terminationGracePeriodSeconds: 45
       nodeSelector:
         workload-class: critical
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: auth-service
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
@@ -47,6 +54,10 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "10"]
           readinessProbe:
             httpGet:
               path: /health
@@ -168,11 +179,18 @@ spec:
       labels:
         app: waiting-room-service
     spec:
+      terminationGracePeriodSeconds: 45
       nodeSelector:
         workload-class: critical
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: waiting-room-service
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
@@ -195,6 +213,10 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "10"]
           readinessProbe:
             httpGet:
               path: /health
@@ -242,6 +264,16 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "pgrep -f java > /dev/null"
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 5
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -257,11 +289,18 @@ spec:
       labels:
         app: seat-lock-service
     spec:
+      terminationGracePeriodSeconds: 45
       nodeSelector:
         workload-class: critical
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: seat-lock-service
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
@@ -284,6 +323,10 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "10"]
           readinessProbe:
             httpGet:
               path: /health
@@ -311,11 +354,18 @@ spec:
       labels:
         app: ticket-service
     spec:
+      terminationGracePeriodSeconds: 45
       nodeSelector:
         workload-class: critical
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: ticket-service
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
@@ -338,6 +388,10 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "10"]
           readinessProbe:
             httpGet:
               path: /health
@@ -365,6 +419,7 @@ spec:
       labels:
         app: order-service
     spec:
+      terminationGracePeriodSeconds: 45
       # general NodePool 배치 이유: order = 매점·굿즈 주문 (티켓 결제는 ticket-service 가 처리)
       # Spot 회수 시에도 SQS·DB 트랜잭션 + client retry 로 흡수 → general 으로 비용 최적화
       # 결제성 트랜잭션 변경 시 재검토 필요
@@ -373,6 +428,12 @@ spec:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: order-service
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
@@ -395,6 +456,10 @@ spec:
               memory: 256Mi
             limits:
               memory: 512Mi
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "10"]
           readinessProbe:
             httpGet:
               path: /
