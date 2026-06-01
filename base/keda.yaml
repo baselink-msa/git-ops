@@ -34,7 +34,7 @@ spec:
   triggers:
     - type: aws-sqs-queue
       metadata:
-        # TODO(prod): account ID 평문 노출 — Sealed Secrets / External Secrets / kustomize secretGenerator 로 전환
+        # queueURL은 configmap의 SQS_ENDPOINT + 큐 이름으로 구성됨
         queueURL: https://sqs.ap-northeast-2.amazonaws.com/740831361032/ticket-confirm-queue
         queueLength: "5"
         awsRegion: ap-northeast-2
