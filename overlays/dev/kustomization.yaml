@@ -28,7 +28,7 @@ images:
   newTag: 9f8fab05f7ebc8bafbcca9047a7fd21ccd169b15
 - name: ticket-worker-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-worker-service
-  newTag: 2b9ace55dec528e379da284caed3f4af86810328
+  newTag: b61a877e71442461c86574be0a4ed2d08234674a
 - name: waiting-room-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-waiting-room-service
   newTag: cb846177f46fd627fccd8a4eddac996ac1ab76e0
