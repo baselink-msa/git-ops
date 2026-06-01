@@ -68,7 +68,7 @@ spec:
             httpGet:
               path: /health
               port: 8081
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -115,7 +115,7 @@ spec:
             httpGet:
               path: /health
               port: 8082
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -162,7 +162,7 @@ spec:
             httpGet:
               path: /health
               port: 8083
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -218,16 +218,14 @@ spec:
               exec:
                 command: ["sleep", "10"]
           readinessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8084
             initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8084
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -328,16 +326,14 @@ spec:
               exec:
                 command: ["sleep", "10"]
           readinessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8086
             initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8086
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -393,16 +389,14 @@ spec:
               exec:
                 command: ["sleep", "10"]
           readinessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8087
             initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8087
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -470,7 +464,7 @@ spec:
             httpGet:
               path: /
               port: 8001
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
 ---
 apiVersion: apps/v1
@@ -517,5 +511,5 @@ spec:
             httpGet:
               path: /
               port: 8000
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
