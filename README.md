@@ -8,7 +8,7 @@ BaseLink 백엔드 서비스를 EKS dev 환경에 배포하기 위한 Kubernetes
 - 9개 백엔드 서비스 Deployment/Service/Ingress
 - IRSA 기반 `backend-runtime` ServiceAccount
 - RDS, ElastiCache, SQS, ECR은 Terraform에서 생성
-- `db/seed-dev.sql`로 dev RDS 초기 스키마와 데이터 생성
+- `auth-service` 시작 시 Flyway로 dev RDS 스키마와 시드 데이터 자동 생성
 - CI가 `overlays/dev/kustomization.yaml`의 이미지 태그를 갱신
 
 ## 디렉터리 구조
@@ -17,7 +17,7 @@ BaseLink 백엔드 서비스를 EKS dev 환경에 배포하기 위한 Kubernetes
 base/
   namespace.yaml
   serviceaccount.yaml
-  configmap.yaml
+  configmap.example.yaml
   secret.example.yaml
   workloads.yaml
   services.yaml
@@ -62,9 +62,9 @@ aws eks update-kubeconfig --region ap-northeast-2 --name baselink-dev
 kubectl get nodes
 ```
 
-3. Secret을 생성합니다.
+3. Terraform addon이 설정과 Secret을 생성했는지 확인합니다.
 
-`base/secret.example.yaml`은 예시입니다. 실제 값은 커밋하지 않습니다.
+`backend-config`, `backend-secret`, `postgres-keda-secret`은 Terraform addon 레이어가 생성합니다. `base/configmap.example.yaml`과 `base/secret.example.yaml`은 참고용이며 실제 값은 커밋하지 않습니다.
 
 필수 키:
 
@@ -122,9 +122,19 @@ kubectl get pods,svc,ingress -n argocd
 
 현재 overlay는 9개 서비스 모두 ECR 이미지로 치환합니다.
 
-## DB Seed
+## DB Migration
 
-`db/seed-dev.sql`은 RDS를 새로 만들었을 때 dev 환경을 바로 테스트할 수 있도록 스키마, 테이블, 시드 데이터를 함께 생성합니다.
+기본 실행 경로는 `auth-service`에 포함된 Flyway migration입니다.
+
+```text
+backend/auth-service/src/main/resources/db/migration/
+  V1__create_schemas_and_tables.sql
+  V2__create_ticket_open_schedule.sql
+  V3__add_ticket_uniqueness_constraints.sql
+  R__seed_dev_data.sql
+```
+
+새 RDS에 `auth-service`가 처음 연결되면 schema, table, dev 시드 데이터를 자동 생성합니다. `db/seed-dev.sql`과 `db/flyway/`는 수동 점검 및 비상 복구 참고용입니다.
 
 포함 내용:
 
@@ -198,4 +208,4 @@ curl http://localhost:18082/api/games
 
 - `KNOWLEDGE_BASE_ID`는 현재 placeholder이므로 Bedrock 연동 시 실제 값으로 교체해야 합니다.
 - Redis TTL 만료만으로 좌석 잠금이 풀릴 경우 DB `game_seats.status=LOCKED`가 남을 수 있습니다.
-- 운영 환경에서는 `ddl-auto=update` 대신 Flyway/Liquibase 도입을 권장합니다.
+- Hibernate는 `ddl-auto=validate`로 실행하며, DB 구조 변경은 Flyway migration으로 관리합니다.

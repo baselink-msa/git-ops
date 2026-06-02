@@ -1,10 +1,14 @@
-# Flyway dev migration 초안
+# Flyway 수동 복구 참고 자료
 
-이 디렉터리는 수동으로 DB schema를 만들던 방식을 Flyway 기반 migration으로 바꾸기 위한 준비 작업입니다.
+현재 기본 migration은 `auth-service` 시작 시 자동으로 실행됩니다.
 
-아직 현재 Kustomize 배포에는 포함하지 않았습니다. 팀원들이 공유 dev 클러스터에서 작업 중일 때는 이 Job을 바로 적용하지 말고, 팀원들과 적용 시점을 맞춘 뒤 사용해야 합니다.
+```text
+backend/auth-service/src/main/resources/db/migration/
+```
 
-## 파일 구성
+이 디렉터리는 로컬 검증과 비상 수동 복구를 위한 참고 자료입니다. 현재 Kustomize 배포에는 포함하지 않았습니다. 수동 Job을 공유 dev RDS에 적용하기 전에는 팀원들과 적용 시점을 맞춰야 합니다.
+
+## 참고 파일 구성
 
 ```text
 gitops/db/flyway/
@@ -31,39 +35,15 @@ job.example.yaml
   EKS 안에서 Flyway를 실행하기 위한 Kubernetes Job 예시
 ```
 
-## 왜 Flyway를 준비하나
-
-현재 dev 환경은 다음 흐름에 가깝습니다.
-
-```text
-Terraform apply
--> RDS PostgreSQL 생성
--> 수동 SQL로 schema 생성
--> Spring JPA ddl-auto=update로 table 생성
--> seed-dev.sql로 초기 데이터 삽입
-```
-
-이 방식은 초반 개발에는 빠르지만, destroy/apply를 반복하거나 팀원이 많아지면 실수가 생기기 쉽습니다.
-
-예를 들면:
-
-```text
-schema 생성을 빼먹음
-table 생성 전에 seed를 실행함
-팀원마다 DB 구조가 달라짐
-RDS 재생성 후 복구 순서가 헷갈림
-```
-
-Flyway를 사용하면 DB 구조와 초기 데이터를 코드로 관리할 수 있습니다.
-
-목표 흐름은 다음과 같습니다.
+## 현재 기본 흐름
 
 ```text
 Terraform apply
 -> backend-secret 생성
--> Flyway migration 실행
--> schema/table/seed 자동 준비
 -> backend 배포
+-> auth-service 시작
+-> Flyway migration 자동 실행
+-> schema/table/seed 자동 준비
 ```
 
 ## 로컬 Docker 테스트
@@ -157,7 +137,7 @@ Flyway 실행:
 
 ```powershell
 docker run --rm `
-  -v "${PWD}\gitops\db\flyway\sql:/flyway/sql" `
+  -v "${PWD}\backend\auth-service\src\main\resources\db\migration:/flyway/sql" `
   flyway/flyway:10-alpine `
   -url=jdbc:postgresql://host.docker.internal:15432/baseball_platform `
   -user=baseball `
@@ -170,6 +150,8 @@ docker run --rm `
 
 ```text
 V1__create_schemas_and_tables.sql
+V2__create_ticket_open_schedule.sql
+V3__add_ticket_uniqueness_constraints.sql
 R__seed_dev_data.sql
 ```
 
@@ -187,15 +169,17 @@ docker exec baselink-postgres-test `
 
 ```text
 installed_rank | version | description                | type | success
-1              | 1       | create schemas and tables  | SQL  | true
-2              |         | seed dev data              | SQL  | true
+1              | 1       | create schemas and tables          | SQL  | true
+2              | 2       | create ticket open schedule        | SQL  | true
+3              | 3       | add ticket uniqueness constraints  | SQL  | true
+4              |         | seed dev data                      | SQL  | true
 ```
 
 Flyway 재실행 검증:
 
 ```powershell
 docker run --rm `
-  -v "${PWD}\gitops\db\flyway\sql:/flyway/sql" `
+  -v "${PWD}\backend\auth-service\src\main\resources\db\migration:/flyway/sql" `
   flyway/flyway:10-alpine `
   -url=jdbc:postgresql://host.docker.internal:15432/baseball_platform `
   -user=baseball `
@@ -245,16 +229,13 @@ Job은 한 번 실행하고 끝나는 리소스입니다. 다시 실행하려면
 kubectl delete job db-migration -n baselink-dev
 ```
 
-## 향후 전환 순서
-
-Flyway가 실제 dev RDS에서 검증되면 다음 순서로 전환합니다.
+## 수동 복구 검증 순서
 
 ```text
 1. Flyway Job으로 schema/table/seed 생성 검증
 2. backend 서비스 정상 기동 확인
 3. API 테스트 확인
-4. SPRING_JPA_HIBERNATE_DDL_AUTO 값을 update에서 validate로 변경
-5. destroy/apply 후 Flyway Job만으로 DB 복구되는지 검증
+4. destroy/apply 후 auth-service 시작만으로 DB 복구되는지 검증
 ```
 
 `ddl-auto=validate`는 Hibernate가 테이블을 직접 만들지 않고, Entity와 DB 구조가 맞는지만 검사합니다.  
@@ -266,4 +247,4 @@ Flyway가 실제 dev RDS에서 검증되면 다음 순서로 전환합니다.
 - 공유 dev RDS에 적용하기 전에는 팀원들과 시간을 맞춰야 합니다.
 - 현재 `seed-dev.sql`과 Flyway SQL은 dev 환경 복구용입니다.
 - 운영 환경에서는 dev seed 데이터를 그대로 사용하면 안 됩니다.
-- Flyway 도입이 완료되기 전까지는 `SPRING_JPA_HIBERNATE_DDL_AUTO=update`가 남아 있을 수 있습니다.
+- 기본 migration SQL의 기준은 `backend/auth-service/src/main/resources/db/migration/`입니다.
