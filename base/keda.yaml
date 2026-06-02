@@ -64,7 +64,7 @@ spec:
         query: |
           SELECT CASE WHEN EXISTS (
             SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
+            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
               AND status = 'scheduled'
           ) THEN 4 ELSE 0 END
         targetQueryValue: "1"
@@ -94,7 +94,7 @@ spec:
         query: |
           SELECT CASE WHEN EXISTS (
             SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
+            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
               AND status = 'scheduled'
           ) THEN 4 ELSE 0 END
         targetQueryValue: "1"
@@ -124,7 +124,7 @@ spec:
         query: |
           SELECT CASE WHEN EXISTS (
             SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
+            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
               AND status = 'scheduled'
           ) THEN 6 ELSE 0 END
         targetQueryValue: "1"
@@ -154,7 +154,7 @@ spec:
         query: |
           SELECT CASE WHEN EXISTS (
             SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
+            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
               AND status = 'scheduled'
           ) THEN 4 ELSE 0 END
         targetQueryValue: "1"
@@ -202,7 +202,7 @@ spec:
         query: |
           SELECT CASE WHEN EXISTS (
             SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
+            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
               AND status = 'scheduled'
           ) THEN 3 ELSE 0 END
         targetQueryValue: "1"
