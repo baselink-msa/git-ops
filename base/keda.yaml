@@ -63,7 +63,7 @@ spec:
       metadata:
         query: |
           SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_open_schedule
+            SELECT 1 FROM ticket_schema.ticket_open_schedule
             WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
               AND status = 'scheduled'
           ) THEN 4 ELSE 0 END
@@ -93,7 +93,7 @@ spec:
       metadata:
         query: |
           SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_open_schedule
+            SELECT 1 FROM ticket_schema.ticket_open_schedule
             WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
               AND status = 'scheduled'
           ) THEN 4 ELSE 0 END
@@ -123,7 +123,7 @@ spec:
       metadata:
         query: |
           SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_open_schedule
+            SELECT 1 FROM ticket_schema.ticket_open_schedule
             WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
               AND status = 'scheduled'
           ) THEN 6 ELSE 0 END
@@ -153,7 +153,7 @@ spec:
       metadata:
         query: |
           SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_open_schedule
+            SELECT 1 FROM ticket_schema.ticket_open_schedule
             WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
               AND status = 'scheduled'
           ) THEN 4 ELSE 0 END
@@ -201,7 +201,7 @@ spec:
       metadata:
         query: |
           SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_open_schedule
+            SELECT 1 FROM ticket_schema.ticket_open_schedule
             WHERE open_at BETWEEN NOW() AND NOW() + INTERVAL '15 minutes'
               AND status = 'scheduled'
           ) THEN 3 ELSE 0 END
