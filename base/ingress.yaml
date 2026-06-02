@@ -10,8 +10,14 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/success-codes: "200-404"
     alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/actions.deny-direct: '{"type":"fixed-response","fixedResponseConfig":{"contentType":"text/plain","statusCode":"403","messageBody":"Access denied"}}'
 spec:
   ingressClassName: alb
+  defaultBackend:
+    service:
+      name: deny-direct
+      port:
+        name: use-annotation
   rules:
     - http:
         paths:
