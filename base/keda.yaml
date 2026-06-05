@@ -27,7 +27,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: ticket-worker-service
-  minReplicaCount: 1
+  minReplicaCount: 2
   maxReplicaCount: 10
   pollingInterval: 15
   cooldownPeriod: 300
@@ -169,7 +169,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: game-service
-  minReplicaCount: 1
+  minReplicaCount: 2
   maxReplicaCount: 10
   pollingInterval: 30
   cooldownPeriod: 300
@@ -217,7 +217,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: ai-chatbot-service
-  minReplicaCount: 1
+  minReplicaCount: 2
   maxReplicaCount: 10
   pollingInterval: 30
   cooldownPeriod: 300
@@ -235,7 +235,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: admin-service
-  minReplicaCount: 1
+  minReplicaCount: 2
   maxReplicaCount: 3
   pollingInterval: 30
   cooldownPeriod: 300
