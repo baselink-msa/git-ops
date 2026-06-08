@@ -59,14 +59,21 @@ spec:
       metadata:
         value: "70"
     - type: postgresql
-      # funnel 중간 단계 (waiting-room 통과 사용자만) → 4
+      # funnel 가중 4 × 경기 배수 (capacity/24000 × 주말 1.3)
       metadata:
         query: |
-          SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
-              AND status = 'scheduled'
-          ) THEN 4 ELSE 0 END
+          SELECT COALESCE(MAX(CEIL(
+            4
+            * COALESCE(st.capacity, 24000) / 24000.0
+            * CASE WHEN EXTRACT(DOW FROM g.game_start_time) IN (0, 6)
+                   THEN 1.3 ELSE 1.0 END
+          )), 0)
+          FROM ticket_schema.ticket_open_schedule s
+          JOIN game_schema.games    g  ON g.game_id    = s.game_id
+          JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
+          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+                          AND s.open_at + INTERVAL '1 hour'
+            AND s.status = 'scheduled'
         targetQueryValue: "1"
       authenticationRef:
         name: postgres-keda-auth
@@ -89,14 +96,21 @@ spec:
       metadata:
         value: "70"
     - type: postgresql
-      # funnel 중간 단계 (waiting-room 통과 사용자만) → 4
+      # funnel 가중 4 × 경기 배수 (capacity/24000 × 주말 1.3)
       metadata:
         query: |
-          SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
-              AND status = 'scheduled'
-          ) THEN 4 ELSE 0 END
+          SELECT COALESCE(MAX(CEIL(
+            4
+            * COALESCE(st.capacity, 24000) / 24000.0
+            * CASE WHEN EXTRACT(DOW FROM g.game_start_time) IN (0, 6)
+                   THEN 1.3 ELSE 1.0 END
+          )), 0)
+          FROM ticket_schema.ticket_open_schedule s
+          JOIN game_schema.games    g  ON g.game_id    = s.game_id
+          JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
+          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+                          AND s.open_at + INTERVAL '1 hour'
+            AND s.status = 'scheduled'
         targetQueryValue: "1"
       authenticationRef:
         name: postgres-keda-auth
@@ -119,14 +133,21 @@ spec:
       metadata:
         value: "70"
     - type: postgresql
-      # waiting-room: funnel 입구. 모든 사용자가 첫 진입 → 가장 높은 동시 접속 → 6
+      # funnel 가중 6 × 경기 배수 (capacity/24000 × 주말 1.3)
       metadata:
         query: |
-          SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
-              AND status = 'scheduled'
-          ) THEN 6 ELSE 0 END
+          SELECT COALESCE(MAX(CEIL(
+            6
+            * COALESCE(st.capacity, 24000) / 24000.0
+            * CASE WHEN EXTRACT(DOW FROM g.game_start_time) IN (0, 6)
+                   THEN 1.3 ELSE 1.0 END
+          )), 0)
+          FROM ticket_schema.ticket_open_schedule s
+          JOIN game_schema.games    g  ON g.game_id    = s.game_id
+          JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
+          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+                          AND s.open_at + INTERVAL '1 hour'
+            AND s.status = 'scheduled'
         targetQueryValue: "1"
       authenticationRef:
         name: postgres-keda-auth
@@ -149,14 +170,21 @@ spec:
       metadata:
         value: "70"
     - type: postgresql
-      # funnel 중간 단계 (waiting-room 통과 사용자만) → 4
+      # funnel 가중 4 × 경기 배수 (capacity/24000 × 주말 1.3)
       metadata:
         query: |
-          SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
-              AND status = 'scheduled'
-          ) THEN 4 ELSE 0 END
+          SELECT COALESCE(MAX(CEIL(
+            4
+            * COALESCE(st.capacity, 24000) / 24000.0
+            * CASE WHEN EXTRACT(DOW FROM g.game_start_time) IN (0, 6)
+                   THEN 1.3 ELSE 1.0 END
+          )), 0)
+          FROM ticket_schema.ticket_open_schedule s
+          JOIN game_schema.games    g  ON g.game_id    = s.game_id
+          JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
+          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+                          AND s.open_at + INTERVAL '1 hour'
+            AND s.status = 'scheduled'
         targetQueryValue: "1"
       authenticationRef:
         name: postgres-keda-auth
@@ -197,14 +225,21 @@ spec:
       metadata:
         value: "70"
     - type: postgresql
-      # 결제 완료 단계. 가장 작은 비율 → 3
+      # funnel 가중 3 × 경기 배수 (capacity/24000 × 주말 1.3)
       metadata:
         query: |
-          SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM ticket_schema.ticket_open_schedule
-            WHERE NOW() BETWEEN open_at - INTERVAL '15 minutes' AND open_at + INTERVAL '1 hour'
-              AND status = 'scheduled'
-          ) THEN 3 ELSE 0 END
+          SELECT COALESCE(MAX(CEIL(
+            3
+            * COALESCE(st.capacity, 24000) / 24000.0
+            * CASE WHEN EXTRACT(DOW FROM g.game_start_time) IN (0, 6)
+                   THEN 1.3 ELSE 1.0 END
+          )), 0)
+          FROM ticket_schema.ticket_open_schedule s
+          JOIN game_schema.games    g  ON g.game_id    = s.game_id
+          JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
+          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+                          AND s.open_at + INTERVAL '1 hour'
+            AND s.status = 'scheduled'
         targetQueryValue: "1"
       authenticationRef:
         name: postgres-keda-auth
