@@ -18,3 +18,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true # monitoring 네임스페이스가 없으면 알아서 생성
+      - ServerSideApply=true
