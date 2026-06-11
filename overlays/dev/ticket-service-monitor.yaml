@@ -1,14 +1,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: ticket-service-monitor
+  name: baselink-backend-monitor # 이름도 멋지게 변경!
   namespace: baselink-dev
   labels:
     release: monitoring-stack
 spec:
   selector:
     matchLabels:
-      app: ticket-service
+      argocd.argoproj.io/instance: baselink-app # 📍 baselink-app에 속한 "모든" 서비스를 긁어와!
   endpoints:
     - port: http
       path: /actuator/prometheus
