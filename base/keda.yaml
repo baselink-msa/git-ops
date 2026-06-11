@@ -71,7 +71,7 @@ spec:
           FROM ticket_schema.ticket_open_schedule s
           JOIN game_schema.games    g  ON g.game_id    = s.game_id
           JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
-          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+          WHERE (now() AT TIME ZONE 'Asia/Seoul') BETWEEN s.open_at - INTERVAL '15 minutes'
                           AND s.open_at + INTERVAL '1 hour'
             AND s.status = 'scheduled'
         targetQueryValue: "1"
@@ -108,7 +108,7 @@ spec:
           FROM ticket_schema.ticket_open_schedule s
           JOIN game_schema.games    g  ON g.game_id    = s.game_id
           JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
-          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+          WHERE (now() AT TIME ZONE 'Asia/Seoul') BETWEEN s.open_at - INTERVAL '15 minutes'
                           AND s.open_at + INTERVAL '1 hour'
             AND s.status = 'scheduled'
         targetQueryValue: "1"
@@ -145,7 +145,7 @@ spec:
           FROM ticket_schema.ticket_open_schedule s
           JOIN game_schema.games    g  ON g.game_id    = s.game_id
           JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
-          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+          WHERE (now() AT TIME ZONE 'Asia/Seoul') BETWEEN s.open_at - INTERVAL '15 minutes'
                           AND s.open_at + INTERVAL '1 hour'
             AND s.status = 'scheduled'
         targetQueryValue: "1"
@@ -182,7 +182,7 @@ spec:
           FROM ticket_schema.ticket_open_schedule s
           JOIN game_schema.games    g  ON g.game_id    = s.game_id
           JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
-          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+          WHERE (now() AT TIME ZONE 'Asia/Seoul') BETWEEN s.open_at - INTERVAL '15 minutes'
                           AND s.open_at + INTERVAL '1 hour'
             AND s.status = 'scheduled'
         targetQueryValue: "1"
@@ -237,7 +237,7 @@ spec:
           FROM ticket_schema.ticket_open_schedule s
           JOIN game_schema.games    g  ON g.game_id    = s.game_id
           JOIN game_schema.stadiums st ON st.stadium_id = g.stadium_id
-          WHERE NOW() BETWEEN s.open_at - INTERVAL '15 minutes'
+          WHERE (now() AT TIME ZONE 'Asia/Seoul') BETWEEN s.open_at - INTERVAL '15 minutes'
                           AND s.open_at + INTERVAL '1 hour'
             AND s.status = 'scheduled'
         targetQueryValue: "1"
