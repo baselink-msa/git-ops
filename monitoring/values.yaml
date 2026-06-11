@@ -1,0 +1,4 @@
+kube-prometheus-stack:
+  # 기본적으로 생성되는 리소스들 중 K8s 버전에 따라 충돌나는 것 방지
+  defaultRules:
+    create: true
