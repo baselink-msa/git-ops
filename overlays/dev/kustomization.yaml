@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - ../../base
+- ticket-service-monitor.yaml
 
 images:
 - name: admin-service
