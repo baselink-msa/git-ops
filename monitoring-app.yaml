@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/baselink-msa/git-ops.git
-    targetRevision: HEAD
+    targetRevision: main
     path: monitoring
   destination:
     server: 'https://kubernetes.default.svc'
