@@ -1,4 +1,11 @@
 kube-prometheus-stack:
-  # 기본적으로 생성되는 리소스들 중 K8s 버전에 따라 충돌나는 것 방지
   defaultRules:
     create: true
+
+  grafana:
+    grafana.ini:
+      server:
+        domain: d1z20dvak4bl13.cloudfront.net  # 실제 CloudFront 도메인으로 교체
+        root_url: "%(protocol)s://%(domain)s/grafana"
+        serve_from_sub_path: true
+    adminPassword: "Password123!"  # 원하는 비밀번호로 변경
