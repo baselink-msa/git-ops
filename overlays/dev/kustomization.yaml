@@ -14,7 +14,7 @@ images:
   newTag: 1897e761264621c25a4d052b20f3132b3b23dd36
 - name: auth-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-auth-service
-  newTag: b191c5c320dfc98bbc94b96ed13e84f18572c192
+  newTag: ec290811c20cd376ae3e4e7d89e1a37661c047b6
 - name: game-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-game-service
   newTag: 68225127819f57ae748271d4172f7311e6757e3c
