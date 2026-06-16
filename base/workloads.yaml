@@ -11,6 +11,8 @@ kind: Deployment
 metadata:
   name: auth-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -76,6 +78,8 @@ kind: Deployment
 metadata:
   name: game-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -123,6 +127,8 @@ kind: Deployment
 metadata:
   name: admin-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -170,6 +176,8 @@ kind: Deployment
 metadata:
   name: waiting-room-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -233,6 +241,8 @@ kind: Deployment
 metadata:
   name: ticket-worker-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -278,6 +288,8 @@ kind: Deployment
 metadata:
   name: seat-lock-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -341,6 +353,8 @@ kind: Deployment
 metadata:
   name: ticket-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -404,6 +418,8 @@ kind: Deployment
 metadata:
   name: order-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
@@ -472,6 +488,8 @@ kind: Deployment
 metadata:
   name: ai-chatbot-service
   namespace: baselink-dev
+  annotations:
+    secret.reloader.stakater.com/reload: "backend-secret"
 spec:
   selector:
     matchLabels:
