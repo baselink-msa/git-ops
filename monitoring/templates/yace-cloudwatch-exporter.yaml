@@ -1,0 +1,219 @@
+---
+# YACE (Yet Another CloudWatch Exporter) - All-in-one manifest
+# CloudWatch 메트릭을 Prometheus 형식으로 수집
+# 대상: RDS, ElastiCache, SQS, WAFv2, CloudFront, ALB
+# 인증: IRSA (IAM Roles for Service Accounts)
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yace-cloudwatch-exporter
+  namespace: monitoring
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-yace-cloudwatch-exporter"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yace-config
+  namespace: monitoring
+data:
+  config.yml: |
+    apiVersion: v1alpha1
+    discovery:
+      jobs:
+        # ─── RDS ───
+        - type: AWS/RDS
+          regions:
+            - ap-northeast-2
+          period: 60
+          length: 300
+          metrics:
+            - name: CPUUtilization
+              statistics: [Average]
+            - name: DatabaseConnections
+              statistics: [Average]
+            - name: ReadLatency
+              statistics: [Average]
+            - name: WriteLatency
+              statistics: [Average]
+
+        # ─── ElastiCache ───
+        - type: AWS/ElastiCache
+          regions:
+            - ap-northeast-2
+          period: 60
+          length: 300
+          metrics:
+            - name: EngineCPUUtilization
+              statistics: [Average]
+            - name: CurrConnections
+              statistics: [Average]
+            - name: NetworkBytesIn
+              statistics: [Sum]
+
+        # ─── SQS ───
+        - type: AWS/SQS
+          regions:
+            - ap-northeast-2
+          period: 60
+          length: 300
+          metrics:
+            - name: ApproximateNumberOfMessagesVisible
+              statistics: [Average]
+            - name: NumberOfMessagesDeleted
+              statistics: [Sum]
+            - name: NumberOfMessagesReceived
+              statistics: [Sum]
+
+        # ─── WAFv2 (Regional - API ALB) ───
+        - type: AWS/WAFV2
+          regions:
+            - ap-northeast-2
+          period: 60
+          length: 300
+          metrics:
+            - name: AllowedRequests
+              statistics: [Sum]
+            - name: BlockedRequests
+              statistics: [Sum]
+            - name: CountedRequests
+              statistics: [Sum]
+
+        # ─── WAFv2 (Global - CloudFront) ───
+        - type: AWS/WAFV2
+          regions:
+            - us-east-1
+          period: 60
+          length: 300
+          metrics:
+            - name: AllowedRequests
+              statistics: [Sum]
+            - name: BlockedRequests
+              statistics: [Sum]
+            - name: CountedRequests
+              statistics: [Sum]
+
+        # ─── CloudFront ───
+        - type: AWS/CloudFront
+          regions:
+            - us-east-1
+          period: 60
+          length: 300
+          metrics:
+            - name: 4xxErrorRate
+              statistics: [Average]
+            - name: 5xxErrorRate
+              statistics: [Average]
+
+        # ─── ALB (ApplicationELB) ───
+        - type: AWS/ApplicationELB
+          regions:
+            - ap-northeast-2
+          period: 60
+          length: 300
+          metrics:
+            - name: TargetResponseTime
+              statistics: [Average]
+            - name: RequestCount
+              statistics: [Sum]
+            - name: HTTPCode_Target_5XX_Count
+              statistics: [Sum]
+            - name: HTTPCode_Target_4XX_Count
+              statistics: [Sum]
+            - name: HealthyHostCount
+              statistics: [Average]
+            - name: UnHealthyHostCount
+              statistics: [Average]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yace-cloudwatch-exporter
+  namespace: monitoring
+  labels:
+    app: yace-cloudwatch-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yace-cloudwatch-exporter
+  template:
+    metadata:
+      labels:
+        app: yace-cloudwatch-exporter
+    spec:
+      serviceAccountName: yace-cloudwatch-exporter
+      containers:
+        - name: yace
+          image: ghcr.io/nerdswords/yet-another-cloudwatch-exporter:v0.62.0
+          args:
+            - --config.file=/config/config.yml
+            - --listen-address=:5000
+          env:
+            - name: AWS_DEFAULT_REGION
+              value: "ap-northeast-2"
+          ports:
+            - name: metrics
+              containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: yace-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yace-cloudwatch-exporter
+  namespace: monitoring
+  labels:
+    app: yace-cloudwatch-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 5000
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app: yace-cloudwatch-exporter
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yace-cloudwatch-exporter
+  namespace: monitoring
+  labels:
+    release: monitoring-stack
+spec:
+  selector:
+    matchLabels:
+      app: yace-cloudwatch-exporter
+  endpoints:
+    - port: metrics
+      interval: 60s
+      path: /metrics
