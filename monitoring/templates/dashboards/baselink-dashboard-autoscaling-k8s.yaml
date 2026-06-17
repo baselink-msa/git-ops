@@ -50,17 +50,17 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"baselink\"}",
+              "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"baselink-dev\"}",
               "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} current",
               "refId": "A"
             },
             {
-              "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"baselink\"}",
+              "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"baselink-dev\"}",
               "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} desired",
               "refId": "B"
             },
             {
-              "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"baselink\"}",
+              "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"baselink-dev\"}",
               "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} max",
               "refId": "C"
             }
@@ -95,12 +95,12 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink\", resource=\"cpu\"}) by (pod) * 100",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"cpu\"}) by (pod) * 100",
               "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Request",
               "refId": "A"
             },
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink\", resource=\"cpu\"}) by (pod) * 100",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink-dev\", resource=\"cpu\"}) by (pod) * 100",
               "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Limit",
               "refId": "B"
             }
@@ -115,12 +115,12 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink\", resource=\"memory\"}) by (pod) * 100",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink-dev\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"memory\"}) by (pod) * 100",
               "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Request",
               "refId": "A"
             },
             {
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink\", resource=\"memory\"}) by (pod) * 100",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink-dev\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink-dev\", resource=\"memory\"}) by (pod) * 100",
               "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Limit",
               "refId": "B"
             }

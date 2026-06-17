@@ -182,7 +182,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink\", container!=\"\"}[1m])) by (pod)",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\"}[1m])) by (pod)",
               "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
               "refId": "A"
             }
@@ -197,7 +197,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink\", container!=\"\"}) by (pod)",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink-dev\", container!=\"\"}) by (pod)",
               "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
               "refId": "A"
             }
