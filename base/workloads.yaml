@@ -45,6 +45,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8081
+          env:
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "2"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: backend-config
@@ -98,6 +103,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "2"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: backend-config
@@ -147,6 +157,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8083
+          env:
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "1"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: backend-config
@@ -210,6 +225,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8084
+          env:
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "1"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: backend-config
@@ -261,6 +281,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8085
+          env:
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "3"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: backend-config
@@ -322,6 +347,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8086
+          env:
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "2"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: backend-config
@@ -387,6 +417,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8087
+          env:
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "4"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: backend-config
