@@ -1,0 +1,268 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baselink-dashboard-e2e-business
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  01-e2e-business.json: |-
+    {
+      "title": "BaseLink - E2E & Business Overview",
+      "uid": "baselink-e2e-business",
+      "tags": ["baselink", "e2e", "business"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "[k6] VUs (가상 유저 수)",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "k6_vus",
+              "legendFormat": "VUs",
+              "refId": "A"
+            },
+            {
+              "expr": "k6_vus_max",
+              "legendFormat": "VUs Max",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 2,
+          "title": "[k6] RPS / TPS",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(k6_http_reqs_total[1m]))",
+              "legendFormat": "RPS",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(k6_iterations_total[1m]))",
+              "legendFormat": "Iterations/s (TPS)",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+        },
+        {
+          "id": 3,
+          "title": "[k6] p95 / p99 응답 속도",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds_bucket[1m])) by (le))",
+              "legendFormat": "p95",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_seconds_bucket[1m])) by (le))",
+              "legendFormat": "p99",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+        },
+        {
+          "id": 4,
+          "title": "[k6] 에러율 (Error Rate)",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(k6_http_req_failed_total[1m])) / sum(rate(k6_http_reqs_total[1m])) * 100",
+              "legendFormat": "Error Rate %",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 5,
+          "title": "[Network] CloudFront 4xx / 5xx 비율",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_cloudfront_4xx_error_rate_average",
+              "legendFormat": "4xx Rate",
+              "refId": "A"
+            },
+            {
+              "expr": "aws_cloudfront_5xx_error_rate_average",
+              "legendFormat": "5xx Rate",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] }
+        },
+        {
+          "id": 6,
+          "title": "[Network] ALB TargetResponseTime",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 6, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_applicationelb_target_response_time_average",
+              "legendFormat": "{{ load_balancer }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+        },
+        {
+          "id": 7,
+          "title": "[비즈니스] 대기 중 유저 수",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 12, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "waiting_queue_active_users",
+              "legendFormat": "Active Waiting Users",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 8,
+          "title": "[비즈니스] 초당 대기열 통과 수",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 6, "x": 18, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(waiting_queue_passed_total[1m]))",
+              "legendFormat": "Passed/s",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 9,
+          "title": "[비즈니스] 좌석 선점 초당 요청 수",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(seat_lock_attempts_total[1m]))",
+              "legendFormat": "Total Attempts/s",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(seat_lock_attempts_total{result=\"success\"}[1m]))",
+              "legendFormat": "Success/s",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(rate(seat_lock_attempts_total{result=\"fail\"}[1m]))",
+              "legendFormat": "Fail/s",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 10,
+          "title": "[비즈니스] 좌석 선점 성공률 / 실패율",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 8, "x": 8, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(seat_lock_attempts_total{result=\"success\"}[1m])) / sum(rate(seat_lock_attempts_total[1m])) * 100",
+              "legendFormat": "Success Rate %",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(seat_lock_attempts_total{result=\"fail\"}[1m])) / sum(rate(seat_lock_attempts_total[1m])) * 100",
+              "legendFormat": "Fail Rate %",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "max": 100,
+              "min": 0
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 11,
+          "title": "[비즈니스] 최종 예매 생성 건수",
+          "type": "timeseries",
+          "gridPos": { "h": 6, "w": 8, "x": 16, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(ticket_booking_total{status=\"requested\"}[1m]))",
+              "legendFormat": "Requested/s",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(ticket_booking_total{status=\"confirmed\"}[1m]))",
+              "legendFormat": "Confirmed/s",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(rate(ticket_booking_total{status=\"canceled\"}[1m]))",
+              "legendFormat": "Canceled/s",
+              "refId": "C"
+            },
+            {
+              "expr": "sum(increase(ticket_booking_total{status=\"confirmed\"}[1h]))",
+              "legendFormat": "Confirmed (last 1h total)",
+              "refId": "D"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        }
+      ]
+    }

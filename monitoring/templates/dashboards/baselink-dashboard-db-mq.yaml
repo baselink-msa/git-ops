@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baselink-dashboard-db-mq
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  03-db-mq.json: |-
+    {
+      "title": "BaseLink - DB & Message Queue",
+      "uid": "baselink-db-mq",
+      "tags": ["baselink", "rds", "redis", "sqs"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "[RDS] CPU 사용률",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_rds_cpuutilization_average",
+              "legendFormat": "{{ dbinstance_identifier }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 90 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 2,
+          "title": "[RDS] Active DB 커넥션 수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_rds_database_connections_average",
+              "legendFormat": "{{ dbinstance_identifier }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 3,
+          "title": "[RDS] Query Latency",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_rds_read_latency_average",
+              "legendFormat": "{{ dbinstance_identifier }} read",
+              "refId": "A"
+            },
+            {
+              "expr": "aws_rds_write_latency_average",
+              "legendFormat": "{{ dbinstance_identifier }} write",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+        },
+        {
+          "id": 4,
+          "title": "[Redis] CPU 사용률",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_elasticache_engine_cpuutilization_average",
+              "legendFormat": "{{ cache_cluster_id }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "max": 100,
+              "min": 0
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 5,
+          "title": "[Redis] 초당 Commands 수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_elasticache_curr_connections_average",
+              "legendFormat": "{{ cache_cluster_id }} connections (ref)",
+              "refId": "A"
+            },
+            {
+              "expr": "rate(aws_elasticache_network_bytes_in_sum[1m])",
+              "legendFormat": "{{ cache_cluster_id }} bytes in/s",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "description": "ElastiCache CloudWatch에는 CommandsProcessed 지표가 직접 없는 경우가 많아 참고용 지표로 대체. Redis EXPORTER(redis_exporter)를 별도로 붙이면 redis_commands_processed_total 사용 권장"
+        },
+        {
+          "id": 6,
+          "title": "[Redis] Active Connections 수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_elasticache_curr_connections_average",
+              "legendFormat": "{{ cache_cluster_id }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 7,
+          "title": "[SQS] 대기 중인 메시지 수 (Backlog)",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_sqs_approximate_number_of_messages_visible_average",
+              "legendFormat": "{{ queue_name }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 8,
+          "title": "[SQS] Worker 처리 속도",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "rate(aws_sqs_number_of_messages_deleted_sum[1m])",
+              "legendFormat": "{{ queue_name }} deleted/s",
+              "refId": "A"
+            },
+            {
+              "expr": "rate(aws_sqs_number_of_messages_received_sum[1m])",
+              "legendFormat": "{{ queue_name }} received/s",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        }
+      ]
+    }
