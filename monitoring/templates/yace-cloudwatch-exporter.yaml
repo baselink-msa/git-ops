@@ -146,7 +146,7 @@ spec:
       serviceAccountName: yace-cloudwatch-exporter
       containers:
         - name: yace
-          image: ghcr.io/nerdswords/yet-another-cloudwatch-exporter:v0.62.0
+          image: quay.io/prometheuscommunity/yet-another-cloudwatch-exporter:v0.65.0
           args:
             - --config.file=/config/config.yml
             - --listen-address=:5000
