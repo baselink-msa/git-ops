@@ -32,4 +32,4 @@ images:
   newTag: 68225127819f57ae748271d4172f7311e6757e3c
 - name: waiting-room-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-waiting-room-service
-  newTag: 01a009637b4cd23ad990c661a774a05993640045
+  newTag: e639ed073f26559c7e989d777b5945bc307242c3
