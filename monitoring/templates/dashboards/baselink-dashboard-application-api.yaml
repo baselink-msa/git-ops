@@ -45,12 +45,12 @@ data:
           "targets": [
             {
               "expr": "sum(rate(http_server_requests_seconds_count{application=~\"$service\"}[1m])) by (application)",
-              "legendFormat": "{{ application }} (Spring)",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} (Spring)",
               "refId": "A"
             },
             {
               "expr": "sum(rate(http_requests_total[1m])) by (service)",
-              "legendFormat": "{{ service }} (FastAPI)",
+              "legendFormat": "{{ "{{" }} service {{ "}}" }} (FastAPI)",
               "refId": "B"
             }
           ],
@@ -128,12 +128,12 @@ data:
           "targets": [
             {
               "expr": "sum(jvm_memory_used_bytes{area=\"heap\", application=~\"$service\"}) by (application)",
-              "legendFormat": "{{ application }} used",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} used",
               "refId": "A"
             },
             {
               "expr": "sum(jvm_memory_max_bytes{area=\"heap\", application=~\"$service\"}) by (application)",
-              "legendFormat": "{{ application }} max",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} max",
               "refId": "B"
             }
           ],
@@ -148,12 +148,12 @@ data:
           "targets": [
             {
               "expr": "sum(rate(jvm_gc_pause_seconds_count{application=~\"$service\"}[1m])) by (application)",
-              "legendFormat": "{{ application }} GC count/s",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} GC count/s",
               "refId": "A"
             },
             {
               "expr": "sum(rate(jvm_gc_pause_seconds_sum{application=~\"$service\"}[1m])) by (application)",
-              "legendFormat": "{{ application }} GC time/s",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} GC time/s",
               "refId": "B"
             }
           ],
@@ -168,7 +168,7 @@ data:
           "targets": [
             {
               "expr": "sum(jvm_threads_live_threads{application=~\"$service\"}) by (application)",
-              "legendFormat": "{{ application }}",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -183,7 +183,7 @@ data:
           "targets": [
             {
               "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink\", container!=\"\"}[1m])) by (pod)",
-              "legendFormat": "{{ pod }}",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -198,7 +198,7 @@ data:
           "targets": [
             {
               "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink\", container!=\"\"}) by (pod)",
-              "legendFormat": "{{ pod }}",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
               "refId": "A"
             }
           ],

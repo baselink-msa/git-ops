@@ -36,7 +36,7 @@ data:
           "targets": [
             {
               "expr": "aws_rds_cpuutilization_average",
-              "legendFormat": "{{ dbinstance_identifier }}",
+              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -66,7 +66,7 @@ data:
           "targets": [
             {
               "expr": "aws_rds_database_connections_average",
-              "legendFormat": "{{ dbinstance_identifier }}",
+              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -81,12 +81,12 @@ data:
           "targets": [
             {
               "expr": "aws_rds_read_latency_average",
-              "legendFormat": "{{ dbinstance_identifier }} read",
+              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }} read",
               "refId": "A"
             },
             {
               "expr": "aws_rds_write_latency_average",
-              "legendFormat": "{{ dbinstance_identifier }} write",
+              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }} write",
               "refId": "B"
             }
           ],
@@ -101,7 +101,7 @@ data:
           "targets": [
             {
               "expr": "aws_elasticache_engine_cpuutilization_average",
-              "legendFormat": "{{ cache_cluster_id }}",
+              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -123,12 +123,12 @@ data:
           "targets": [
             {
               "expr": "aws_elasticache_curr_connections_average",
-              "legendFormat": "{{ cache_cluster_id }} connections (ref)",
+              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }} connections (ref)",
               "refId": "A"
             },
             {
               "expr": "rate(aws_elasticache_network_bytes_in_sum[1m])",
-              "legendFormat": "{{ cache_cluster_id }} bytes in/s",
+              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }} bytes in/s",
               "refId": "B"
             }
           ],
@@ -144,7 +144,7 @@ data:
           "targets": [
             {
               "expr": "aws_elasticache_curr_connections_average",
-              "legendFormat": "{{ cache_cluster_id }}",
+              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -159,7 +159,7 @@ data:
           "targets": [
             {
               "expr": "aws_sqs_approximate_number_of_messages_visible_average",
-              "legendFormat": "{{ queue_name }}",
+              "legendFormat": "{{ "{{" }} queue_name {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -174,12 +174,12 @@ data:
           "targets": [
             {
               "expr": "rate(aws_sqs_number_of_messages_deleted_sum[1m])",
-              "legendFormat": "{{ queue_name }} deleted/s",
+              "legendFormat": "{{ "{{" }} queue_name {{ "}}" }} deleted/s",
               "refId": "A"
             },
             {
               "expr": "rate(aws_sqs_number_of_messages_received_sum[1m])",
-              "legendFormat": "{{ queue_name }} received/s",
+              "legendFormat": "{{ "{{" }} queue_name {{ "}}" }} received/s",
               "refId": "B"
             }
           ],

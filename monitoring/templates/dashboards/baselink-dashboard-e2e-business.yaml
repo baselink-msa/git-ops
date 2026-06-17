@@ -146,7 +146,7 @@ data:
           "targets": [
             {
               "expr": "aws_applicationelb_target_response_time_average",
-              "legendFormat": "{{ load_balancer }}",
+              "legendFormat": "{{ "{{" }} load_balancer {{ "}}" }}",
               "refId": "A"
             }
           ],

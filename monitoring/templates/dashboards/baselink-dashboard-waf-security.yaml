@@ -36,17 +36,17 @@ data:
           "targets": [
             {
               "expr": "sum(rate(aws_wafv2_allowed_requests_sum[1m])) by (webacl)",
-              "legendFormat": "{{ webacl }} Allowed/s",
+              "legendFormat": "{{ "{{" }} webacl {{ "}}" }} Allowed/s",
               "refId": "A"
             },
             {
               "expr": "sum(rate(aws_wafv2_blocked_requests_sum[1m])) by (webacl)",
-              "legendFormat": "{{ webacl }} Blocked/s",
+              "legendFormat": "{{ "{{" }} webacl {{ "}}" }} Blocked/s",
               "refId": "B"
             },
             {
               "expr": "sum(rate(aws_wafv2_counted_requests_sum[1m])) by (webacl)",
-              "legendFormat": "{{ webacl }} Counted/s",
+              "legendFormat": "{{ "{{" }} webacl {{ "}}" }} Counted/s",
               "refId": "C"
             }
           ],
@@ -89,7 +89,7 @@ data:
           "targets": [
             {
               "expr": "sum(rate(aws_wafv2_blocked_requests_sum[5m])) by (rule)",
-              "legendFormat": "{{ rule }}",
+              "legendFormat": "{{ "{{" }} rule {{ "}}" }}",
               "refId": "A"
             }
           ],

@@ -36,7 +36,7 @@ data:
           "targets": [
             {
               "expr": "keda_metrics_adapter_scaler_metrics_value",
-              "legendFormat": "{{ scaledObject }} / {{ metric }}",
+              "legendFormat": "{{ "{{" }} scaledObject {{ "}}" }} / {{ "{{" }} metric {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -51,17 +51,17 @@ data:
           "targets": [
             {
               "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"baselink\"}",
-              "legendFormat": "{{ horizontalpodautoscaler }} current",
+              "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} current",
               "refId": "A"
             },
             {
               "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"baselink\"}",
-              "legendFormat": "{{ horizontalpodautoscaler }} desired",
+              "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} desired",
               "refId": "B"
             },
             {
               "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"baselink\"}",
-              "legendFormat": "{{ horizontalpodautoscaler }} max",
+              "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} max",
               "refId": "C"
             }
           ],
@@ -76,7 +76,7 @@ data:
           "targets": [
             {
               "expr": "sum(karpenter_nodes_allocatable) by (node_pool)",
-              "legendFormat": "{{ node_pool }} (allocatable ref)",
+              "legendFormat": "{{ "{{" }} node_pool {{ "}}" }} (allocatable ref)",
               "refId": "A"
             },
             {
@@ -96,12 +96,12 @@ data:
           "targets": [
             {
               "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink\", resource=\"cpu\"}) by (pod) * 100",
-              "legendFormat": "{{ pod }} vs Request",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Request",
               "refId": "A"
             },
             {
               "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink\", resource=\"cpu\"}) by (pod) * 100",
-              "legendFormat": "{{ pod }} vs Limit",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Limit",
               "refId": "B"
             }
           ],
@@ -116,12 +116,12 @@ data:
           "targets": [
             {
               "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink\", resource=\"memory\"}) by (pod) * 100",
-              "legendFormat": "{{ pod }} vs Request",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Request",
               "refId": "A"
             },
             {
               "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink\", resource=\"memory\"}) by (pod) * 100",
-              "legendFormat": "{{ pod }} vs Limit",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Limit",
               "refId": "B"
             }
           ],
