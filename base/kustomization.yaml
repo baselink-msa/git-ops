@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - serviceaccount.yaml
   - workloads.yaml
+  - waiting-room-rbac.yaml
   - services.yaml
   - ingress.yaml
   - keda.yaml
