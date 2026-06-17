@@ -28,7 +28,7 @@ spec:
   scaleTargetRef:
     name: ticket-worker-service
   minReplicaCount: 2
-  maxReplicaCount: 10
+  maxReplicaCount: 4
   pollingInterval: 15
   cooldownPeriod: 300
   triggers:
@@ -50,7 +50,7 @@ spec:
   scaleTargetRef:
     name: ticket-service
   minReplicaCount: 2
-  maxReplicaCount: 10
+  maxReplicaCount: 6
   pollingInterval: 30
   cooldownPeriod: 300
   triggers:
@@ -87,7 +87,7 @@ spec:
   scaleTargetRef:
     name: seat-lock-service
   minReplicaCount: 2
-  maxReplicaCount: 10
+  maxReplicaCount: 4
   pollingInterval: 30
   cooldownPeriod: 300
   triggers:
@@ -124,7 +124,7 @@ spec:
   scaleTargetRef:
     name: waiting-room-service
   minReplicaCount: 2
-  maxReplicaCount: 10
+  maxReplicaCount: 4
   pollingInterval: 30
   cooldownPeriod: 300
   triggers:
@@ -161,7 +161,7 @@ spec:
   scaleTargetRef:
     name: auth-service
   minReplicaCount: 2
-  maxReplicaCount: 10
+  maxReplicaCount: 3
   pollingInterval: 30
   cooldownPeriod: 300
   triggers:
@@ -198,7 +198,7 @@ spec:
   scaleTargetRef:
     name: game-service
   minReplicaCount: 2
-  maxReplicaCount: 10
+  maxReplicaCount: 2
   pollingInterval: 30
   cooldownPeriod: 300
   triggers:
@@ -271,7 +271,7 @@ spec:
   scaleTargetRef:
     name: admin-service
   minReplicaCount: 2
-  maxReplicaCount: 3
+  maxReplicaCount: 2
   pollingInterval: 30
   cooldownPeriod: 300
   triggers:
