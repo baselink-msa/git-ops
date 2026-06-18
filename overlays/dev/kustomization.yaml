@@ -17,7 +17,7 @@ images:
   newTag: a7900ffe7c008222dae4ee0e8d47b819144d660a
 - name: game-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-game-service
-  newTag: 68225127819f57ae748271d4172f7311e6757e3c
+  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: order-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-order-service
   newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
