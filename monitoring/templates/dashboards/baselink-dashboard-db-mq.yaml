@@ -315,6 +315,102 @@ data:
             }
           ],
           "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 15,
+          "title": "[Python DB Pool] 서비스별 사용 현황",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(python_db_pool_in_use) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} in-use",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(python_db_pool_max) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} max",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "short" },
+            "overrides": [
+              {
+                "matcher": { "id": "byRegexp", "options": ".*max" },
+                "properties": [
+                  { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 5] } },
+                  { "id": "custom.fillOpacity", "value": 0 }
+                ]
+              }
+            ]
+          },
+          "description": "꺾은선 그래프로 Max 선(점선) 아래에 In-use 선이 그려집니다."
+        },
+        {
+          "id": 16,
+          "title": "[Python DB Pool] 서비스별 사용률",
+          "type": "gauge",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "100 * sum(python_db_pool_in_use) by (exported_service) / sum(python_db_pool_max) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 80 },
+                  { "color": "red", "value": 95 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 17,
+          "title": "[Python DB Pool] 획득 지연 및 타임아웃",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(python_db_pool_acquire_wait_seconds_bucket[5m])) by (le, exported_service))",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} p95 wait",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(python_db_pool_acquire_timeout_total[5m])) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} timeouts",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "s" },
+            "overrides": [
+              {
+                "matcher": { "id": "byRegexp", "options": ".*timeouts" },
+                "properties": [
+                  { "id": "custom.drawStyle", "value": "bars" },
+                  { "id": "custom.axisSoftMax", "value": 10 },
+                  { "id": "custom.axisPlacement", "value": "right" },
+                  { "id": "unit", "value": "short" }
+                ]
+              }
+            ]
+          },
+          "description": "p95 대기시간(좌축, 초)과 타임아웃 발생 건수(우축, 막대)"
         }
       ]
     }
