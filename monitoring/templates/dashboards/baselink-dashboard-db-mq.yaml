@@ -35,8 +35,8 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "aws_rds_cpuutilization_average",
-              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }}",
+              "expr": "sum(aws_rds_cpuutilization_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -65,8 +65,8 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "aws_rds_database_connections_average",
-              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }}",
+              "expr": "sum(aws_rds_database_connections_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -80,13 +80,13 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "aws_rds_read_latency_average",
-              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }} read",
+              "expr": "sum(aws_rds_read_latency_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }} read",
               "refId": "A"
             },
             {
-              "expr": "aws_rds_write_latency_average",
-              "legendFormat": "{{ "{{" }} dbinstance_identifier {{ "}}" }} write",
+              "expr": "sum(aws_rds_write_latency_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }} write",
               "refId": "B"
             }
           ],
@@ -100,8 +100,8 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "aws_elasticache_engine_cpuutilization_average",
-              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }}",
+              "expr": "sum(aws_elasticache_engine_cpuutilization_average) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -122,13 +122,13 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "aws_elasticache_curr_connections_average",
-              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }} connections (ref)",
+              "expr": "sum(aws_elasticache_curr_connections_average) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }} connections (ref)",
               "refId": "A"
             },
             {
-              "expr": "rate(aws_elasticache_network_bytes_in_sum[1m])",
-              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }} bytes in/s",
+              "expr": "sum(rate(aws_elasticache_network_bytes_in_sum[1m])) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }} bytes in/s",
               "refId": "B"
             }
           ],
@@ -143,8 +143,8 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "aws_elasticache_curr_connections_average",
-              "legendFormat": "{{ "{{" }} cache_cluster_id {{ "}}" }}",
+              "expr": "sum(aws_elasticache_curr_connections_average) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -158,8 +158,8 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "aws_sqs_approximate_number_of_messages_visible_average",
-              "legendFormat": "{{ "{{" }} queue_name {{ "}}" }}",
+              "expr": "sum(aws_sqs_approximate_number_of_messages_visible_average) by (dimension_QueueName)",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }}",
               "refId": "A"
             }
           ],
@@ -173,13 +173,13 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "rate(aws_sqs_number_of_messages_deleted_sum[1m])",
-              "legendFormat": "{{ "{{" }} queue_name {{ "}}" }} deleted/s",
+              "expr": "sum(rate(aws_sqs_number_of_messages_deleted_sum[1m])) by (dimension_QueueName)",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} deleted/s",
               "refId": "A"
             },
             {
-              "expr": "rate(aws_sqs_number_of_messages_received_sum[1m])",
-              "legendFormat": "{{ "{{" }} queue_name {{ "}}" }} received/s",
+              "expr": "sum(rate(aws_sqs_number_of_messages_received_sum[1m])) by (dimension_QueueName)",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} received/s",
               "refId": "B"
             }
           ],
