@@ -1,0 +1,22 @@
+---
+# Karpenter ServiceMonitor
+# karpenter 네임스페이스의 Karpenter controller 메트릭을 Prometheus가 수집
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: karpenter
+  namespace: monitoring
+  labels:
+    release: monitoring-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - karpenter
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: karpenter
+  endpoints:
+    - port: http-metrics
+      interval: 30s
+      path: /metrics
