@@ -35,18 +35,18 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "sum(rate(aws_wafv2_allowed_requests_sum[1m])) by (dimension_WebACL)",
-              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Allowed/s",
+              "expr": "sum(aws_wafv2_allowed_requests_sum{dimension_Rule=\"ALL\"}) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Allowed",
               "refId": "A"
             },
             {
-              "expr": "sum(rate(aws_wafv2_blocked_requests_sum[1m])) by (dimension_WebACL)",
-              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Blocked/s",
+              "expr": "sum(aws_wafv2_blocked_requests_sum{dimension_Rule=\"ALL\"}) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Blocked",
               "refId": "B"
             },
             {
-              "expr": "sum(rate(aws_wafv2_counted_requests_sum[1m])) by (dimension_WebACL)",
-              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Counted/s",
+              "expr": "sum(aws_wafv2_counted_requests_sum{dimension_Rule=\"ALL\"}) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Counted",
               "refId": "C"
             }
           ],
@@ -88,7 +88,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "sum(rate(aws_wafv2_blocked_requests_sum[5m])) by (dimension_Rule)",
+              "expr": "sum(aws_wafv2_blocked_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}) by (dimension_Rule)",
               "legendFormat": "{{ "{{" }} dimension_Rule {{ "}}" }}",
               "refId": "A"
             }

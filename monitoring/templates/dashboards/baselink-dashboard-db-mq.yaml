@@ -173,13 +173,13 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
-              "expr": "sum(rate(aws_sqs_number_of_messages_deleted_sum[1m])) by (dimension_QueueName)",
-              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} deleted/s",
+              "expr": "aws_sqs_number_of_messages_deleted_sum{dimension_QueueName=~\"ticket.*\"}",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} deleted",
               "refId": "A"
             },
             {
-              "expr": "sum(rate(aws_sqs_number_of_messages_received_sum[1m])) by (dimension_QueueName)",
-              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} received/s",
+              "expr": "aws_sqs_number_of_messages_received_sum{dimension_QueueName=~\"ticket.*\"}",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} received",
               "refId": "B"
             }
           ],
