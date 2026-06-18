@@ -46,6 +46,8 @@ spec:
           ports:
             - containerPort: 8081
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "auth-service"
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "2"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
@@ -104,6 +106,8 @@ spec:
           ports:
             - containerPort: 8082
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "game-service"
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "2"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
@@ -158,6 +162,8 @@ spec:
           ports:
             - containerPort: 8083
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "admin-service"
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "1"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
@@ -227,6 +233,8 @@ spec:
           ports:
             - containerPort: 8084
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "waiting-room-service"
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "1"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
@@ -283,6 +291,8 @@ spec:
           ports:
             - containerPort: 8085
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "ticket-worker-service"
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "3"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
@@ -349,6 +359,8 @@ spec:
           ports:
             - containerPort: 8086
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "seat-lock-service"
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "2"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
@@ -419,6 +431,8 @@ spec:
           ports:
             - containerPort: 8087
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "ticket-service"
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "4"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
@@ -492,6 +506,8 @@ spec:
           ports:
             - containerPort: 8001
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "order-service"
             - name: PYTHON_DB_POOL_MIN_SIZE
               value: "1"
             - name: PYTHON_DB_POOL_MAX_SIZE
@@ -558,6 +574,8 @@ spec:
           ports:
             - containerPort: 8000
           env:
+            - name: OTEL_SERVICE_NAME
+              value: "ai-chatbot-service"
             - name: PYTHON_DB_POOL_MIN_SIZE
               value: "1"
             - name: PYTHON_DB_POOL_MAX_SIZE
