@@ -14,3 +14,9 @@ kube-prometheus-stack:
         enabled: true
         org_role: Viewer
     adminPassword: "Password123!"
+    additionalDataSources:
+      - name: Jaeger
+        type: jaeger
+        url: http://jaeger.monitoring:16686
+        access: proxy
+        isDefault: false
