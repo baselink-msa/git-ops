@@ -184,6 +184,137 @@ data:
             }
           ],
           "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 9,
+          "title": "[RDS] Connection 현황",
+          "type": "gauge",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_rds_database_connections_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "max": 80,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 40 },
+                  { "color": "orange", "value": 50 },
+                  { "color": "red", "value": 55 },
+                  { "color": "dark-red", "value": 60 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 10,
+          "title": "[WaitingRoom] DB 감속률",
+          "type": "gauge",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "min(waiting_room_db_throttle_percent{application=\"waiting-room-service\"})",
+              "legendFormat": "감속률",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "dark-red", "value": null },
+                  { "color": "red", "value": 25 },
+                  { "color": "orange", "value": 50 },
+                  { "color": "yellow", "value": 75 },
+                  { "color": "green", "value": 100 }
+                ]
+              },
+              "mappings": [
+                { "type": "value", "options": { "100": { "text": "NORMAL" } } },
+                { "type": "value", "options": { "75": { "text": "CAUTION" } } },
+                { "type": "value", "options": { "50": { "text": "WARNING" } } },
+                { "type": "value", "options": { "25": { "text": "CRITICAL" } } },
+                { "type": "value", "options": { "0": { "text": "STOP" } } }
+              ]
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 11,
+          "title": "[WaitingRoom] 실제 입장 인원/분",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(waiting_queue_passed_total{application=\"waiting-room-service\"}[5m])) * 60",
+              "legendFormat": "입장/분",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 12,
+          "title": "[WaitingRoom] 관측 DB 연결 수",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "max(waiting_room_db_connections{application=\"waiting-room-service\"})",
+              "legendFormat": "DB Connections",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 13,
+          "title": "[WaitingRoom] 현재 대기 인원",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "max(waiting_queue_active_users{application=\"waiting-room-service\"})",
+              "legendFormat": "대기 인원",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 14,
+          "title": "[K8s] Ticket Service Ready Pods",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace=\"baselink-dev\", deployment=\"ticket-service\"}",
+              "legendFormat": "Ready Pods",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
         }
       ]
     }
