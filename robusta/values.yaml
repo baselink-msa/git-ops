@@ -1,0 +1,59 @@
+robusta:
+  # ─── 클러스터 정보 ───
+  clusterName: baselink-dev
+  isSmallCluster: true
+
+  # ─── HolmesGPT (AI 자동 분석) 활성화 ───
+  holmes:
+    enabled: true
+    llm:
+      provider: aws_bedrock
+      model: anthropic.claude-3-5-sonnet-20241022-v2:0
+      aws:
+        region: ap-northeast-2
+        # IRSA로 자격증명 주입 — accessKey/secretKey 불필요
+    toolsets:
+      - name: kubernetes
+        enabled: true
+      - name: prometheus
+        enabled: true
+        config:
+          prometheus_url: "http://monitoring-stack-kube-prom-prometheus.monitoring:9090"
+
+  # ─── Robusta ServiceAccount (IRSA for Bedrock) ───
+  serviceAccount:
+    create: true
+    name: robusta-runner
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
+
+  # ─── Slack Sink (알림 전송) ───
+  sinksConfig:
+    - slack_sink:
+        name: main_slack_sink
+        slack_channel: aws-alerts
+        api_key: "https://hooks.slack.com/services/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"
+
+  # ─── Prometheus 연동 (Alertmanager → Robusta) ───
+  enablePrometheusStack: false  # 이미 kube-prometheus-stack 있으므로 별도 설치 안 함
+  prometheusAlertManagerUrl: "http://monitoring-stack-kube-prom-alertmanager.monitoring:9093"
+
+  # ─── 기존 Prometheus Stack과 통합 ───
+  globalConfig:
+    prometheus_url: "http://monitoring-stack-kube-prom-prometheus.monitoring:9090"
+    alertmanager_url: "http://monitoring-stack-kube-prom-alertmanager.monitoring:9093"
+
+  # ─── 리소스 제한 (dev 환경 경량화) ───
+  runner:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+  # ─── 시스템 노드 배치 ───
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule

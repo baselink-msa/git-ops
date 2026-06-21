@@ -1,0 +1,7 @@
+apiVersion: v2
+name: robusta-stack
+version: 1.0.0
+dependencies:
+  - name: robusta
+    version: "0.20.5"
+    repository: "https://robusta-charts.storage.googleapis.com"
