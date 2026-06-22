@@ -34,7 +34,7 @@ kube-prometheus-stack:
               text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
         - name: "robusta"
           webhook_configs:
-            - url: "http://robusta-runner.monitoring/api/alerts"
+            - url: "http://robusta-stack-runner.monitoring/api/alerts"
               send_resolved: true
     alertmanagerSpec:
       secrets:
