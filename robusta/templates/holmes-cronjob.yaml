@@ -30,7 +30,7 @@ data:
             return []
 
     def ask_holmes(alert_name, summary, labels):
-        question = f"다음 Kubernetes alert를 한국어로 분석해줘. alert 이름: '{alert_name}', 요약: {summary}, 라벨: {json.dumps(labels)}. 근본 원인과 해결 방법을 한국어로 설명해줘."
+        question = f"다음 Kubernetes alert를 한국어로 분석해줘. alert 이름: '{alert_name}', 요약: {summary}, 라벨: {json.dumps(labels)}. 근본 원인과 해결 방법을 한국어로 설명해줘. 응답에 <result> 태그를 붙이지 마."
         data = json.dumps({
             "ask": question,
             "resource": {
@@ -47,7 +47,10 @@ data:
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
                 result = json.loads(resp.read().decode())
-                return result.get("analysis", "분석 결과를 가져오지 못했습니다.")
+                analysis = result.get("analysis", "분석 결과를 가져오지 못했습니다.")
+                # <result> 태그 제거
+                analysis = analysis.replace("<result>", "").replace("</result>", "").strip()
+                return analysis
         except Exception as e:
             return f"Holmes 분석 실패: {e}"
 
@@ -93,7 +96,7 @@ data:
 
         print(f"[INFO] {len(firing)}개 firing alert 발견. 분석 시작...")
 
-        for alert in firing:
+        for i, alert in enumerate(firing):
             labels = alert.get("labels", {})
             alert_name = labels.get("alertname", "Unknown")
             summary = alert.get("annotations", {}).get("summary", "N/A")
@@ -101,6 +104,11 @@ data:
             print(f"[ANALYZING] {alert_name}: {summary}")
             analysis = ask_holmes(alert_name, summary, labels)
             send_to_slack(alert_name, summary, analysis)
+
+            # Rate limit 방지: 요청 사이 15초 대기
+            if i < len(firing) - 1:
+                import time
+                time.sleep(15)
 
     if __name__ == "__main__":
         main()
