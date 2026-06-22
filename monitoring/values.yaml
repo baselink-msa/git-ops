@@ -29,8 +29,9 @@ kube-prometheus-stack:
               send_resolved: true
               title: '{{ .CommonLabels.alertname }}'
               text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
-    secrets:
-      - infra-alerts-slack
+    alertmanagerSpec:
+      secrets:
+        - infra-alerts-slack
 
   grafana:
     grafana.ini:
