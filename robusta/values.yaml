@@ -12,6 +12,10 @@ robusta:
         value: "bedrock/anthropic.claude-3-haiku-20240307-v1:0"
       - name: AWS_REGION_NAME
         value: "ap-northeast-2"
+      - name: LITELLM_DISABLE_PROMPT_CACHING
+        value: "true"
+      - name: DISABLE_PROMPT_CACHING
+        value: "true"
     serviceAccount:
       annotations:
         eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
