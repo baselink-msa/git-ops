@@ -12,6 +12,9 @@ robusta:
         value: "bedrock/anthropic.claude-3-5-sonnet-20240620-v1:0"
       - name: AWS_REGION_NAME
         value: "ap-northeast-2"
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
 
   # ─── Robusta Runner 설정 ───
   runner:
@@ -30,10 +33,6 @@ robusta:
 
   # ─── ServiceAccount (IRSA for Bedrock) ───
   runnerServiceAccount:
-    annotations:
-      eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
-
-  holmesServiceAccount:
     annotations:
       eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
 
