@@ -1,0 +1,151 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: holmes-alert-analyzer
+  namespace: monitoring
+data:
+  analyze.py: |
+    #!/usr/bin/env python3
+    """
+    Firing alert를 Alertmanager에서 가져와 Holmes에 분석 요청 후 Slack으로 전송.
+    """
+    import json
+    import os
+    import urllib.request
+    import sys
+
+    ALERTMANAGER_URL = os.environ.get("ALERTMANAGER_URL", "http://monitoring-stack-kube-prom-alertmanager:9093")
+    HOLMES_URL = os.environ.get("HOLMES_URL", "http://robusta-stack-holmes:80")
+    SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
+    SOURCE_LABEL = os.environ.get("SOURCE_LABEL", "ai-analysis")
+
+    def get_firing_alerts():
+        url = f"{ALERTMANAGER_URL}/api/v2/alerts?filter=source%3D%22{SOURCE_LABEL}%22&active=true"
+        req = urllib.request.Request(url)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return json.loads(resp.read().decode())
+        except Exception as e:
+            print(f"[ERROR] Alertmanager 조회 실패: {e}")
+            return []
+
+    def ask_holmes(alert_name, summary, labels):
+        question = f"Kubernetes alert '{alert_name}' is firing. Summary: {summary}. Labels: {json.dumps(labels)}. What is the root cause and how to fix it?"
+        data = json.dumps({
+            "ask": question,
+            "resource": {
+                "name": alert_name,
+                "namespace": labels.get("namespace", "unknown"),
+                "kind": "Alert"
+            }
+        }).encode()
+        req = urllib.request.Request(
+            f"{HOLMES_URL}/api/chat",
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                result = json.loads(resp.read().decode())
+                return result.get("analysis", "분석 결과를 가져오지 못했습니다.")
+        except Exception as e:
+            return f"Holmes 분석 실패: {e}"
+
+    def send_to_slack(alert_name, summary, analysis):
+        if not SLACK_WEBHOOK_URL:
+            print(f"[SKIP] SLACK_WEBHOOK_URL 미설정. 콘솔 출력:\n{analysis}")
+            return
+        payload = {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {"type": "plain_text", "text": f"🔍 AI Alert 분석: {alert_name}"}
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"*Summary:* {summary}"}
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"*AI 분석 결과:*\n{analysis[:2900]}"}
+                }
+            ]
+        }
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(
+            SLACK_WEBHOOK_URL,
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            urllib.request.urlopen(req, timeout=10)
+            print(f"[OK] Slack 전송 완료: {alert_name}")
+        except Exception as e:
+            print(f"[ERROR] Slack 전송 실패: {e}")
+
+    def main():
+        alerts = get_firing_alerts()
+        firing = [a for a in alerts if a.get("status", {}).get("state") == "active"]
+
+        if not firing:
+            print("[INFO] 분석할 firing alert 없음.")
+            return
+
+        print(f"[INFO] {len(firing)}개 firing alert 발견. 분석 시작...")
+
+        for alert in firing:
+            labels = alert.get("labels", {})
+            alert_name = labels.get("alertname", "Unknown")
+            summary = alert.get("annotations", {}).get("summary", "N/A")
+
+            print(f"[ANALYZING] {alert_name}: {summary}")
+            analysis = ask_holmes(alert_name, summary, labels)
+            send_to_slack(alert_name, summary, analysis)
+
+    if __name__ == "__main__":
+        main()
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: holmes-alert-analyzer
+  namespace: monitoring
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: robusta-stack-holmes-service-account
+          restartPolicy: Never
+          containers:
+            - name: analyzer
+              image: python:3.11-slim
+              command: ["python3", "/scripts/analyze.py"]
+              env:
+                - name: ALERTMANAGER_URL
+                  value: "http://monitoring-stack-kube-prom-alertmanager:9093"
+                - name: HOLMES_URL
+                  value: "http://robusta-stack-holmes:80"
+                - name: SLACK_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: holmes-slack-webhook
+                      key: url
+                - name: SOURCE_LABEL
+                  value: "ai-analysis"
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+          volumes:
+            - name: script
+              configMap:
+                name: holmes-alert-analyzer
+          tolerations:
+            - key: CriticalAddonsOnly
+              operator: Exists
+              effect: NoSchedule
