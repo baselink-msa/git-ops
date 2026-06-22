@@ -1,0 +1,53 @@
+robusta:
+  # ─── 클러스터 정보 ───
+  clusterName: "baselink-dev"
+  isSmallCluster: true
+
+  # ─── HolmesGPT (AI 자동 분석) 활성화 ───
+  enableHolmesGPT: true
+  holmes:
+    enablePostProcessing: true
+    additionalEnvVars:
+      - name: MODEL
+        value: "bedrock/anthropic.claude-3-5-sonnet-20240620-v1:0"
+      - name: AWS_REGION_NAME
+        value: "ap-northeast-2"
+
+  # ─── Robusta Runner 설정 ───
+  runner:
+    additional_env_vars:
+      - name: SLACK_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: robusta-slack-bot
+            key: slack-token
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+  # ─── ServiceAccount (IRSA for Bedrock) ───
+  runnerServiceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
+
+  # ─── Slack Sink (Secret 참조 방식) ───
+  sinksConfig:
+    - slack_sink:
+        name: infra_ai_analysis_slack
+        slack_channel: infra-ai-analysis
+        api_key: "{{ env.SLACK_API_KEY }}"
+
+  # ─── Prometheus 연동 ───
+  enablePrometheusStack: false
+  globalConfig:
+    prometheus_url: "http://monitoring-stack-kube-prom-prometheus.monitoring:9090"
+    alertmanager_url: "http://monitoring-stack-kube-prom-alertmanager.monitoring:9093"
+
+  # ─── 시스템 노드 배치 ───
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
