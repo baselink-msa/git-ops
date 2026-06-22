@@ -9,7 +9,7 @@ robusta:
     enablePostProcessing: true
     additionalEnvVars:
       - name: MODEL
-        value: "bedrock/anthropic.claude-3-5-sonnet-20240620-v1:0"
+        value: "bedrock/anthropic.claude-3-haiku-20240307-v1:0"
       - name: AWS_REGION_NAME
         value: "ap-northeast-2"
     serviceAccount:
