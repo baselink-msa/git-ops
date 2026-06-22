@@ -46,6 +46,18 @@ robusta:
     prometheus_url: "http://monitoring-stack-kube-prom-prometheus.monitoring:9090"
     alertmanager_url: "http://monitoring-stack-kube-prom-alertmanager.monitoring:9093"
 
+  # ─── 자동 AI 분석 Playbook ───
+  # source=ai-analysis 라벨이 붙은 alert 발생 시 HolmesGPT가 자동으로 분석 실행
+  customPlaybooks:
+    - triggers:
+        - on_prometheus_alert:
+            status: "firing"
+            alert_name: ""
+      actions:
+        - ask_holmes: {}
+      sinks:
+        - infra_ai_analysis_slack
+
   # ─── 시스템 노드 배치 ───
   tolerations:
     - key: CriticalAddonsOnly
