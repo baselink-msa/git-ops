@@ -1,0 +1,119 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: aws-infra-ai-analysis
+  namespace: monitoring
+  labels:
+    release: monitoring-stack
+spec:
+  groups:
+    - name: rds.rules
+      rules:
+        - alert: RDSHighCPU
+          expr: aws_rds_cpuutilization_average > 80
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "RDS CPU 사용률 높음 ({{ $value }}%)"
+            description: "RDS 인스턴스 CPU가 5분 이상 80%를 초과했습니다."
+        - alert: RDSHighConnections
+          expr: aws_rds_database_connections_average > 80
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "RDS 커넥션 수 높음 ({{ $value }})"
+        - alert: RDSHighLatency
+          expr: aws_rds_read_latency_average > 0.05 or aws_rds_write_latency_average > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "RDS read/write latency 증가"
+
+    - name: waf.rules
+      rules:
+        - alert: WAFHighBlockRate
+          expr: |
+            (sum(rate(aws_wafv2_blocked_requests_sum[5m]))
+            /
+            (sum(rate(aws_wafv2_allowed_requests_sum[5m])) + sum(rate(aws_wafv2_blocked_requests_sum[5m])))) > 0.3
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "WAF 차단율 급증 (30% 이상)"
+            description: "비정상 트래픽 패턴 또는 공격 가능성."
+
+    - name: elasticache.rules
+      rules:
+        - alert: ElastiCacheHighCPU
+          expr: aws_elasticache_engine_cpuutilization_average > 80
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+        - alert: ElastiCacheHighConnections
+          expr: aws_elasticache_curr_connections_average > 1000
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+
+    - name: sqs.rules
+      rules:
+        - alert: SQSQueueBacklog
+          expr: aws_sqs_approximate_number_of_messages_visible_average > 1000
+          for: 10m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "SQS 큐 적체 ({{ $value }}개)"
+            description: "메시지 처리가 지연되고 있을 가능성."
+
+    - name: alb.rules
+      rules:
+        - alert: ALBHigh5xxRate
+          expr: sum(rate(aws_applicationelb_httpcode_target_5_xx_count_sum[5m])) > 5
+          for: 5m
+          labels:
+            severity: critical
+            source: ai-analysis
+            team: infra
+        - alert: ALBHighLatency
+          expr: aws_applicationelb_target_response_time_average > 1
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+        - alert: ALBUnhealthyHost
+          expr: aws_applicationelb_un_healthy_host_count_average > 0
+          for: 3m
+          labels:
+            severity: critical
+            source: ai-analysis
+            team: infra
+
+    - name: cloudfront.rules
+      rules:
+        - alert: CloudFrontHigh5xxRate
+          expr: aws_cloudfront_5xx_error_rate_average > 1
+          for: 5m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
