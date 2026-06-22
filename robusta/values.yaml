@@ -33,6 +33,10 @@ robusta:
     annotations:
       eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
 
+  holmesServiceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
+
   # ─── Slack Sink (Secret 참조 방식) ───
   sinksConfig:
     - slack_sink:
