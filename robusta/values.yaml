@@ -14,6 +14,12 @@ robusta:
         value: "ap-northeast-2"
       - name: LITELLM_DROP_PARAMS
         value: "true"
+      - name: PYTHONPATH
+        value: "/etc/holmes/config"
+    toolsets: {}
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
     command:
       - "sh"
       - "-c"
