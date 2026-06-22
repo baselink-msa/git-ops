@@ -7,6 +7,10 @@ BaseLink 백엔드 서비스를 EKS dev 환경에 배포하기 위한 Kubernetes
 - `baselink-dev` 네임스페이스 배포
 - 9개 백엔드 서비스 Deployment/Service/Ingress
 - IRSA 기반 `backend-runtime` ServiceAccount
+- KEDA ScaledObject 기반 서비스별 autoscaling
+- 전 서비스 PodDisruptionBudget
+- Stakater Reloader annotation 기반 `backend-secret` 변경 감지
+- waiting-room-service의 EndpointSlice 조회용 RBAC
 - RDS, ElastiCache, SQS, ECR은 Terraform에서 생성
 - `auth-service` 시작 시 Flyway로 dev RDS 스키마와 시드 데이터 자동 생성
 - CI가 `overlays/dev/kustomization.yaml`의 이미지 태그를 갱신
@@ -23,6 +27,9 @@ base/
   services.yaml
   ingress.yaml
   ingress-argocd.yaml
+  keda.yaml
+  pdb.yaml
+  waiting-room-rbac.yaml
   kustomization.yaml
 overlays/
   dev/
@@ -44,6 +51,31 @@ db/
 | ticket-service | 8087 | 예매 생성/조회/확정/취소 |
 | order-service | 8001 | 주류 주문 |
 | ai-chatbot-service | 8000 | FAQ + AI 챗봇 |
+
+## Autoscaling과 운영 보조 리소스
+
+`base/keda.yaml`은 서비스별 KEDA ScaledObject를 정의합니다.
+
+대기열과 예매 흐름은 아래 리소스와 함께 동작합니다.
+
+```text
+waiting-room-service
+-> ticket-service EndpointSlice 조회
+-> Ready Pod 수 기반 입장 처리량 계산
+-> Redis 대기열/active token slot 관리
+```
+
+이를 위해 `base/waiting-room-rbac.yaml`에서 EndpointSlice 조회 권한을 부여합니다.
+
+`base/pdb.yaml`은 KEDA가 관리하는 서비스에 PDB를 적용해 장애/노드 교체 시 최소 가용성을 유지합니다.
+
+`base/workloads.yaml`의 backend Deployment에는 아래 annotation이 적용됩니다.
+
+```yaml
+secret.reloader.stakater.com/reload: "backend-secret"
+```
+
+Terraform addon 레이어가 `backend-secret`을 갱신하면 Reloader가 변경을 감지해 관련 Pod를 rolling restart합니다.
 
 ## 배포 전 준비
 
@@ -149,6 +181,7 @@ backend/auth-service/src/main/resources/db/migration/
 - 경기별 `game_seats` 자동 연결
 - `game_seats.status` 체크 제약조건: `AVAILABLE`, `SOLD`, `BLOCKED`, `LOCKED`
 - 대기열 정책, 주류 메뉴, FAQ
+- KEDA 사전 확장 스케줄용 ticket open schedule
 
 임시 Pod로 실행:
 
@@ -209,3 +242,4 @@ curl http://localhost:18082/api/games
 - `KNOWLEDGE_BASE_ID`는 현재 placeholder이므로 Bedrock 연동 시 실제 값으로 교체해야 합니다.
 - Redis TTL 만료만으로 좌석 잠금이 풀릴 경우 DB `game_seats.status=LOCKED`가 남을 수 있습니다.
 - Hibernate는 `ddl-auto=validate`로 실행하며, DB 구조 변경은 Flyway migration으로 관리합니다.
+- `backend-secret` 값이 갱신되면 Reloader가 자동 재시작하지만, Reloader Helm release 자체는 Terraform addon 레이어에서 관리합니다.
