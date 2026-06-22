@@ -30,7 +30,7 @@ data:
             return []
 
     def ask_holmes(alert_name, summary, labels):
-        question = f"Kubernetes alert '{alert_name}' is firing. Summary: {summary}. Labels: {json.dumps(labels)}. What is the root cause and how to fix it?"
+        question = f"다음 Kubernetes alert를 한국어로 분석해줘. alert 이름: '{alert_name}', 요약: {summary}, 라벨: {json.dumps(labels)}. 근본 원인과 해결 방법을 한국어로 설명해줘."
         data = json.dumps({
             "ask": question,
             "resource": {
