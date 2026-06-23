@@ -79,6 +79,12 @@ spec:
             preStop:
               exec:
                 command: ["sleep", "10"]
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            periodSeconds: 10
+            failureThreshold: 18
           readinessProbe:
             httpGet:
               path: /health
@@ -135,6 +141,12 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            periodSeconds: 10
+            failureThreshold: 18
           readinessProbe:
             httpGet:
               path: /health
@@ -191,6 +203,12 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            periodSeconds: 10
+            failureThreshold: 18
           readinessProbe:
             httpGet:
               path: /health
@@ -266,6 +284,11 @@ spec:
             preStop:
               exec:
                 command: ["sleep", "10"]
+          startupProbe:
+            tcpSocket:
+              port: 8084
+            periodSeconds: 10
+            failureThreshold: 18
           readinessProbe:
             tcpSocket:
               port: 8084
@@ -320,6 +343,14 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "pgrep -f java > /dev/null"
+            periodSeconds: 10
+            failureThreshold: 18
           livenessProbe:
             exec:
               command:
@@ -392,6 +423,11 @@ spec:
             preStop:
               exec:
                 command: ["sleep", "10"]
+          startupProbe:
+            tcpSocket:
+              port: 8086
+            periodSeconds: 10
+            failureThreshold: 18
           readinessProbe:
             tcpSocket:
               port: 8086
@@ -464,6 +500,11 @@ spec:
             preStop:
               exec:
                 command: ["sleep", "10"]
+          startupProbe:
+            tcpSocket:
+              port: 8087
+            periodSeconds: 10
+            failureThreshold: 18
           readinessProbe:
             tcpSocket:
               port: 8087
