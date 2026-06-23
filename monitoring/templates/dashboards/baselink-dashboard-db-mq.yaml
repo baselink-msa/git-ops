@@ -1,0 +1,416 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baselink-dashboard-db-mq
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  03-db-mq.json: |-
+    {
+      "title": "BaseLink - DB & Message Queue",
+      "uid": "baselink-db-mq",
+      "tags": ["baselink", "rds", "redis", "sqs"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "[RDS] CPU 사용률",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_rds_cpuutilization_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 90 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 2,
+          "title": "[RDS] Active DB 커넥션 수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_rds_database_connections_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 3,
+          "title": "[RDS] Query Latency",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_rds_read_latency_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }} read",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(aws_rds_write_latency_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }} write",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+        },
+        {
+          "id": 4,
+          "title": "[Redis] CPU 사용률",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_elasticache_engine_cpuutilization_average) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "max": 100,
+              "min": 0
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 5,
+          "title": "[Redis] 초당 Commands 수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_elasticache_curr_connections_average) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }} connections (ref)",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(aws_elasticache_network_bytes_in_sum[1m])) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }} bytes in/s",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "description": "ElastiCache CloudWatch에는 CommandsProcessed 지표가 직접 없는 경우가 많아 참고용 지표로 대체. Redis EXPORTER(redis_exporter)를 별도로 붙이면 redis_commands_processed_total 사용 권장"
+        },
+        {
+          "id": 6,
+          "title": "[Redis] Active Connections 수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_elasticache_curr_connections_average) by (dimension_CacheClusterId)",
+              "legendFormat": "{{ "{{" }} dimension_CacheClusterId {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 7,
+          "title": "[SQS] 대기 중인 메시지 수 (Backlog)",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_sqs_approximate_number_of_messages_visible_average) by (dimension_QueueName)",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 8,
+          "title": "[SQS] Worker 처리 속도",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_sqs_number_of_messages_deleted_sum{dimension_QueueName=~\"ticket.*\"}",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} deleted",
+              "refId": "A"
+            },
+            {
+              "expr": "aws_sqs_number_of_messages_received_sum{dimension_QueueName=~\"ticket.*\"}",
+              "legendFormat": "{{ "{{" }} dimension_QueueName {{ "}}" }} received",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 9,
+          "title": "[RDS] Connection 현황",
+          "type": "gauge",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_rds_database_connections_average) by (dimension_DBInstanceIdentifier)",
+              "legendFormat": "{{ "{{" }} dimension_DBInstanceIdentifier {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "max": 80,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 40 },
+                  { "color": "orange", "value": 50 },
+                  { "color": "red", "value": 55 },
+                  { "color": "dark-red", "value": 60 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 10,
+          "title": "[WaitingRoom] DB 감속률",
+          "type": "gauge",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "min(waiting_room_db_throttle_percent{application=\"waiting-room-service\"})",
+              "legendFormat": "감속률",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "dark-red", "value": null },
+                  { "color": "red", "value": 25 },
+                  { "color": "orange", "value": 50 },
+                  { "color": "yellow", "value": 75 },
+                  { "color": "green", "value": 100 }
+                ]
+              },
+              "mappings": [
+                { "type": "value", "options": { "100": { "text": "NORMAL" } } },
+                { "type": "value", "options": { "75": { "text": "CAUTION" } } },
+                { "type": "value", "options": { "50": { "text": "WARNING" } } },
+                { "type": "value", "options": { "25": { "text": "CRITICAL" } } },
+                { "type": "value", "options": { "0": { "text": "STOP" } } }
+              ]
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 11,
+          "title": "[WaitingRoom] 실제 입장 인원/분",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(waiting_queue_passed_total{application=\"waiting-room-service\"}[5m])) * 60",
+              "legendFormat": "입장/분",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 12,
+          "title": "[WaitingRoom] 관측 DB 연결 수",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "max(waiting_room_db_connections{application=\"waiting-room-service\"})",
+              "legendFormat": "DB Connections",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 13,
+          "title": "[WaitingRoom] 현재 대기 인원",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "max(waiting_queue_active_users{application=\"waiting-room-service\"})",
+              "legendFormat": "대기 인원",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 14,
+          "title": "[K8s] Ticket Service Ready Pods",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace=\"baselink-dev\", deployment=\"ticket-service\"}",
+              "legendFormat": "Ready Pods",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 15,
+          "title": "[Python DB Pool] 서비스별 사용 현황",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(python_db_pool_in_use) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} in-use",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(python_db_pool_max) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} max",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "short" },
+            "overrides": [
+              {
+                "matcher": { "id": "byRegexp", "options": ".*max" },
+                "properties": [
+                  { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 5] } },
+                  { "id": "custom.fillOpacity", "value": 0 }
+                ]
+              }
+            ]
+          },
+          "description": "꺾은선 그래프로 Max 선(점선) 아래에 In-use 선이 그려집니다."
+        },
+        {
+          "id": 16,
+          "title": "[Python DB Pool] 서비스별 사용률",
+          "type": "gauge",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "100 * sum(python_db_pool_in_use) by (exported_service) / sum(python_db_pool_max) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 80 },
+                  { "color": "red", "value": 95 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 17,
+          "title": "[Python DB Pool] 획득 지연 및 타임아웃",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(python_db_pool_acquire_wait_seconds_bucket[5m])) by (le, exported_service))",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} p95 wait",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(python_db_pool_acquire_timeout_total[5m])) by (exported_service)",
+              "legendFormat": "{{ "{{" }} exported_service {{ "}}" }} timeouts",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "s" },
+            "overrides": [
+              {
+                "matcher": { "id": "byRegexp", "options": ".*timeouts" },
+                "properties": [
+                  { "id": "custom.drawStyle", "value": "bars" },
+                  { "id": "custom.axisSoftMax", "value": 10 },
+                  { "id": "custom.axisPlacement", "value": "right" },
+                  { "id": "unit", "value": "short" }
+                ]
+              }
+            ]
+          },
+          "description": "p95 대기시간(좌축, 초)과 타임아웃 발생 건수(우축, 막대)"
+        }
+      ]
+    }

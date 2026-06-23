@@ -8,28 +8,28 @@ resources:
 images:
 - name: admin-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-admin-service
-  newTag: ec290811c20cd376ae3e4e7d89e1a37661c047b6
+  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: ai-chatbot-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ai-chatbot-service
-  newTag: 5f6bd860000cae1c63bae2b2b3f7d3cc8700e11c
+  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: auth-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-auth-service
-  newTag: ec290811c20cd376ae3e4e7d89e1a37661c047b6
+  newTag: 8a8bdfe60d84d5d4103b22f2ef0e51399eba6635
 - name: game-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-game-service
-  newTag: 68225127819f57ae748271d4172f7311e6757e3c
+  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: order-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-order-service
-  newTag: 5f6bd860000cae1c63bae2b2b3f7d3cc8700e11c
+  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: seat-lock-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-seat-lock-service
-  newTag: 68225127819f57ae748271d4172f7311e6757e3c
+  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: ticket-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-service
-  newTag: 70a645ff1d7c8d72ec05642f81f88518e7c31655
+  newTag: cf0d84dea8f3c217c61f72d39112a722281adef2
 - name: ticket-worker-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-worker-service
-  newTag: 68225127819f57ae748271d4172f7311e6757e3c
+  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: waiting-room-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-waiting-room-service
-  newTag: 68225127819f57ae748271d4172f7311e6757e3c
+  newTag: cb0c96e8eb291df20401487a5566a0aee6334a90

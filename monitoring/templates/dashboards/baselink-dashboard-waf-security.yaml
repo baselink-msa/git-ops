@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baselink-dashboard-waf-security
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  05-waf-security.json: |-
+    {
+      "title": "BaseLink - WAF Security",
+      "uid": "baselink-waf-security",
+      "tags": ["baselink", "waf", "security"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-3h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "[WAF] Allowed / Blocked / Counted 요청 수",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 16, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_wafv2_allowed_requests_sum{dimension_Rule=\"ALL\"}) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Allowed",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(aws_wafv2_blocked_requests_sum{dimension_Rule=\"ALL\"}) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Blocked",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(aws_wafv2_counted_requests_sum{dimension_Rule=\"ALL\"}) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Counted",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+        },
+        {
+          "id": 2,
+          "title": "[Network] CloudFront 403 에러율",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_cloudfront_403_error_rate_average",
+              "legendFormat": "403 Rate",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 3,
+          "title": "[WAF] Rule별 매치 건수",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(aws_wafv2_blocked_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}) by (dimension_Rule)",
+              "legendFormat": "{{ "{{" }} dimension_Rule {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "description": "YACE에서 WAF Rule 단위 지표를 가져오려면 CloudWatch WAF 메트릭에 Rule 디멘션이 설정되어 있어야 함. 기본 WebACL 단위 메트릭만 있다면 이 패널은 webacl 단위로 대체 필요"
+        },
+        {
+          "id": 4,
+          "title": "[WAF] Sampled Requests (최근 차단 요청 로그)",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "topk(20, aws_wafv2_blocked_requests_sum)",
+              "legendFormat": "",
+              "refId": "A",
+              "format": "table",
+              "instant": true
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "description": "Prometheus는 시계열 집계만 가능하므로, 실제 'Sampled Requests'(요청 헤더/IP 등 원본 로그)는 CloudWatch Logs Insights 또는 WAF 콘솔의 Sampled requests 기능에서 직접 확인이 필요. 이 패널은 차단량이 가장 많은 항목을 보여주는 근사치"
+        }
+      ]
+    }

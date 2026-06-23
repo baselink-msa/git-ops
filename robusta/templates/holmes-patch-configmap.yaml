@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-toolsets-configmap
+  namespace: monitoring
+data:
+  sitecustomize.py: |
+    """
+    Monkey-patch litellm.completion to remove cache_control_injection_points
+    for Bedrock models. This parameter is not supported by Bedrock's Converse API
+    and causes 403 errors.
+    """
+    try:
+        import litellm
+
+        _original_completion = litellm.completion
+
+        def _patched_completion(*args, **kwargs):
+            kwargs.pop('cache_control_injection_points', None)
+            return _original_completion(*args, **kwargs)
+
+        litellm.completion = _patched_completion
+    except Exception:
+        pass

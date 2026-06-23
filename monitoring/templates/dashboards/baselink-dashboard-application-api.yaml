@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baselink-dashboard-application-api
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  02-application-api.json: |-
+    {
+      "title": "BaseLink - Application & API",
+      "uid": "baselink-app-api",
+      "tags": ["baselink", "application", "api", "jvm"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          },
+          {
+            "name": "service",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "${datasource}" },
+            "query": "label_values(http_server_requests_seconds_count, application)",
+            "includeAll": true,
+            "multi": true,
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "[API] HTTP 요청량",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{application=~\"$service\"}[1m])) by (application)",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} (Spring)",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(http_requests_total[1m])) by (service)",
+              "legendFormat": "{{ "{{" }} service {{ "}}" }} (FastAPI)",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+        },
+        {
+          "id": 2,
+          "title": "[API] 응답 지연 시간 (Avg, p95, p99)",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{application=~\"$service\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=~\"$service\"}[1m]))",
+              "legendFormat": "Avg (Spring)",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=~\"$service\"}[1m])) by (le))",
+              "legendFormat": "p95 (Spring)",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=~\"$service\"}[1m])) by (le))",
+              "legendFormat": "p99 (Spring)",
+              "refId": "C"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))",
+              "legendFormat": "p95 (FastAPI)",
+              "refId": "D"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+        },
+        {
+          "id": 3,
+          "title": "[API] 400 / 500 에러 발생 비율",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{application=~\"$service\", status=~\"4..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=~\"$service\"}[1m])) * 100",
+              "legendFormat": "4xx Rate %",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{application=~\"$service\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=~\"$service\"}[1m])) * 100",
+              "legendFormat": "5xx Rate %",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 4,
+          "title": "[JVM] Heap 메모리 사용량",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(jvm_memory_used_bytes{area=\"heap\", application=~\"$service\"}) by (application)",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} used",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(jvm_memory_max_bytes{area=\"heap\", application=~\"$service\"}) by (application)",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} max",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+        },
+        {
+          "id": 5,
+          "title": "[JVM] GC 발생 빈도 및 소요 시간",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(jvm_gc_pause_seconds_count{application=~\"$service\"}[1m])) by (application)",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} GC count/s",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(jvm_gc_pause_seconds_sum{application=~\"$service\"}[1m])) by (application)",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }} GC time/s",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 6,
+          "title": "[JVM] 활성 스레드(Active Threads) 수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(jvm_threads_live_threads{application=~\"$service\"}) by (application)",
+              "legendFormat": "{{ "{{" }} application {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 7,
+          "title": "[Pod] Service별 CPU 사용량",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\"}[1m])) by (pod)",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 8,
+          "title": "[Pod] Service별 Memory 사용량",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 21 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink-dev\", container!=\"\"}) by (pod)",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+        }
+      ]
+    }

@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baselink-dashboard-autoscaling-k8s
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  04-autoscaling-k8s.json: |-
+    {
+      "title": "BaseLink - Autoscaling & K8s",
+      "uid": "baselink-autoscaling-k8s",
+      "tags": ["baselink", "keda", "karpenter", "k8s"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "[KEDA] Trigger 메트릭 추이",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "keda_metrics_adapter_scaler_metrics_value",
+              "legendFormat": "{{ "{{" }} scaledObject {{ "}}" }} / {{ "{{" }} metric {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 2,
+          "title": "[KEDA] Pod Replica 개수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"baselink-dev\"}",
+              "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} current",
+              "refId": "A"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"baselink-dev\"}",
+              "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} desired",
+              "refId": "B"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"baselink-dev\"}",
+              "legendFormat": "{{ "{{" }} horizontalpodautoscaler {{ "}}" }} max",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 3,
+          "title": "[Karpenter] 프로비저닝된 Node 개수",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(karpenter_nodes_allocatable) by (node_pool)",
+              "legendFormat": "{{ "{{" }} node_pool {{ "}}" }} (allocatable ref)",
+              "refId": "A"
+            },
+            {
+              "expr": "count(kube_node_labels{label_karpenter_sh_initialized=\"true\"})",
+              "legendFormat": "Karpenter-provisioned nodes",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 4,
+          "title": "[K8s] 컨테이너 CPU 할당량(Limits/Requests) 대비 사용률(%)",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 7 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"cpu\"}) by (pod) * 100",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Request",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\"}[1m])) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink-dev\", resource=\"cpu\"}) by (pod) * 100",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Limit",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] }
+        },
+        {
+          "id": 5,
+          "title": "[K8s] 컨테이너 Memory 할당량(Limits/Requests) 대비 사용률(%)",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink-dev\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"memory\"}) by (pod) * 100",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Request",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"baselink-dev\", container!=\"\"}) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"baselink-dev\", resource=\"memory\"}) by (pod) * 100",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }} vs Limit",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] }
+        }
+      ]
+    }

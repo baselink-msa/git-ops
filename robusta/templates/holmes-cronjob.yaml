@@ -1,0 +1,319 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: holmes-cache-manager
+  namespace: monitoring
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["holmes-analyzed-cache"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: holmes-cache-manager
+  namespace: monitoring
+subjects:
+  - kind: ServiceAccount
+    name: robusta-stack-holmes-service-account
+    namespace: monitoring
+roleRef:
+  kind: Role
+  name: holmes-cache-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: holmes-alert-analyzer
+  namespace: monitoring
+data:
+  analyze.py: |
+    #!/usr/bin/env python3
+    """
+    Firing alert를 Alertmanager에서 가져와 Holmes에 분석 요청 후 Slack으로 전송.
+    30분 내 동일 alert 재분석 방지 (ConfigMap 기반 중복 체크).
+    """
+    import json
+    import os
+    import urllib.request
+    import urllib.error
+    import time
+    import ssl
+    from datetime import datetime, timezone
+
+    ALERTMANAGER_URL = os.environ.get("ALERTMANAGER_URL", "http://monitoring-stack-kube-prom-alertmanager:9093")
+    HOLMES_URL = os.environ.get("HOLMES_URL", "http://robusta-stack-holmes:80")
+    SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
+    CACHE_CM_NAME = "holmes-analyzed-cache"
+    CACHE_CM_NAMESPACE = "monitoring"
+    DEDUP_SECONDS = 1800  # 30분
+
+    # 분석 제외할 alert (노이즈/시스템용/EKS 관리형 false positive)
+    EXCLUDED_ALERTS = {"Watchdog", "InfoInhibitor", "KubeSchedulerDown", "KubeControllerManagerDown", "KubeHpaMaxedOut", "KubeletTooManyPods", "TargetDown"}
+
+    # severity가 warning 또는 critical인 것만 분석
+    ALLOWED_SEVERITIES = {"warning", "critical"}
+
+    def get_cache():
+        """Kubernetes API로 ConfigMap에서 이전 분석 기록 조회"""
+        token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+        ca_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+        try:
+            with open(token_path) as f:
+                token = f.read().strip()
+            url = f"https://kubernetes.default.svc/api/v1/namespaces/{CACHE_CM_NAMESPACE}/configmaps/{CACHE_CM_NAME}"
+            req = urllib.request.Request(url, headers={
+                "Authorization": f"Bearer {token}",
+            })
+            import ssl
+            ctx = ssl.create_default_context(cafile=ca_path)
+            with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+                cm = json.loads(resp.read().decode())
+                cache_data = cm.get("data", {}).get("cache", "{}")
+                return json.loads(cache_data)
+        except Exception:
+            return {}
+
+    def save_cache(cache):
+        """Kubernetes API로 ConfigMap에 분석 기록 저장"""
+        token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+        ca_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+        try:
+            with open(token_path) as f:
+                token = f.read().strip()
+            import ssl
+            ctx = ssl.create_default_context(cafile=ca_path)
+            cache_json = json.dumps(cache)
+            body = json.dumps({
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "metadata": {"name": CACHE_CM_NAME, "namespace": CACHE_CM_NAMESPACE},
+                "data": {"cache": cache_json}
+            }).encode()
+
+            # Try PATCH first (update), fall back to POST (create)
+            url = f"https://kubernetes.default.svc/api/v1/namespaces/{CACHE_CM_NAMESPACE}/configmaps/{CACHE_CM_NAME}"
+            req = urllib.request.Request(url, data=body, method="PUT", headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            })
+            try:
+                urllib.request.urlopen(req, timeout=10, context=ctx)
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    # ConfigMap doesn't exist, create it
+                    url = f"https://kubernetes.default.svc/api/v1/namespaces/{CACHE_CM_NAMESPACE}/configmaps"
+                    req = urllib.request.Request(url, data=body, method="POST", headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json",
+                    })
+                    urllib.request.urlopen(req, timeout=10, context=ctx)
+                else:
+                    raise
+        except Exception as e:
+            print(f"[WARN] 캐시 저장 실패: {e}")
+
+    def is_recently_analyzed(cache, alert_name):
+        """30분 내 분석한 alertname인지 확인"""
+        if alert_name not in cache:
+            return False
+        last_time = cache[alert_name]
+        now = datetime.now(timezone.utc).timestamp()
+        return (now - last_time) < DEDUP_SECONDS
+
+    def get_firing_alerts():
+        url = f"{ALERTMANAGER_URL}/api/v2/alerts?active=true"
+        req = urllib.request.Request(url)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return json.loads(resp.read().decode())
+        except Exception as e:
+            print(f"[ERROR] Alertmanager 조회 실패: {e}")
+            return []
+
+    def ask_holmes(alert_name, summary, labels):
+        labels_str = json.dumps(labels, ensure_ascii=False)
+        question = (
+            f"다음 Kubernetes alert를 분석해줘.\n"
+            f"\n"
+            f"alert name = '{alert_name}'\n"
+            f"summary = {summary}\n"
+            f"labels = {labels_str}\n"
+            f"\n"
+            f"[분석 규칙 - 반드시 따를 것]\n"
+            f"1. 라벨을 재진술하지 마. 사용 가능한 도구(kubectl, prometheus 쿼리)를 적극 사용해서 실제 원인을 조사해.\n"
+            f"2. pod/container/instance/job 라벨이 exporter(yace, node-exporter, kube-state-metrics, prometheus)를 가리키면, 그건 데이터 수집 출처일 뿐 원인이 아니야. 무시해.\n"
+            f"3. dimension_TargetGroup 이름(예 k8s-baselink-gameserv-...)에서 실제 K8s 서비스/Deployment를 추론하고, 그 워크로드의 Pod 상태, 재시작 이력, 최근 로그를 조회해.\n"
+            f"\n"
+            f"[alertname별 조사 우선순위]\n"
+            f"- ALBUnhealthyHost/TargetDown = dimension_TargetGroup에서 K8s 워크로드 추론 후 Pod 상태/이벤트/로그 확인\n"
+            f"- NodeMemoryHighUtilization/NodeSystemSaturation = 해당 노드의 Pod 리소스 사용량 top 확인\n"
+            f"- CrashLoopBackOff/High5xxRate = 관련 워크로드 로그에서 에러 패턴 확인\n"
+            f"\n"
+            f"[답변 형식 - 한국어, 5~8줄 이내]\n"
+            f"1. 현상 = 무엇이 문제인지 1줄\n"
+            f"2. 원인 = 실제 조사 결과 기반, 추측 금지\n"
+            f"3. 조치 = 구체적 행동 1~2개\n"
+            f"\n"
+            f"조사해도 원인을 못 찾으면 추측하지 말고 '확인 필요' 항목을 명시해. 응답에 result 태그 붙이지 마."
+        )
+        data = json.dumps({
+            "ask": question,
+            "resource": {
+                "name": alert_name,
+                "namespace": labels.get("namespace", "unknown"),
+                "kind": "Alert"
+            }
+        }).encode()
+        req = urllib.request.Request(
+            f"{HOLMES_URL}/api/chat",
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                result = json.loads(resp.read().decode())
+                analysis = result.get("analysis", "분석 결과를 가져오지 못했습니다.")
+                analysis = analysis.replace("<result>", "").replace("</result>", "").strip()
+                return analysis
+        except Exception as e:
+            return f"Holmes 분석 실패: {e}"
+
+    def send_to_slack(alert_name, summary, analysis):
+        if not SLACK_WEBHOOK_URL:
+            print(f"[SKIP] SLACK_WEBHOOK_URL 미설정. 콘솔 출력:\n{analysis}")
+            return
+        payload = {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {"type": "plain_text", "text": f"🔍 AI Alert 분석: {alert_name}"}
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"*Summary:* {summary}"}
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"*AI 분석 결과:*\n{analysis[:2900]}"}
+                }
+            ]
+        }
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(
+            SLACK_WEBHOOK_URL,
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            urllib.request.urlopen(req, timeout=10)
+            print(f"[OK] Slack 전송 완료: {alert_name}")
+        except Exception as e:
+            print(f"[ERROR] Slack 전송 실패: {e}")
+
+    def main():
+        alerts = get_firing_alerts()
+        firing = [
+            a for a in alerts
+            if a.get("status", {}).get("state") == "active"
+            and a.get("labels", {}).get("alertname") not in EXCLUDED_ALERTS
+            and a.get("labels", {}).get("severity", "") in ALLOWED_SEVERITIES
+        ]
+
+        if not firing:
+            print("[INFO] 분석할 firing alert 없음.")
+            return
+
+        # 중복 분석 방지: 캐시 로드
+        cache = get_cache()
+        now = datetime.now(timezone.utc).timestamp()
+        analyzed_count = 0
+
+        print(f"[INFO] {len(firing)}개 firing alert 발견. 중복 체크 후 분석 시작...")
+
+        # 같은 alertname은 1개만 분석 (fingerprint 다르더라도)
+        seen_alert_names = set()
+
+        for i, alert in enumerate(firing):
+            labels = alert.get("labels", {})
+            alert_name = labels.get("alertname", "Unknown")
+            summary = alert.get("annotations", {}).get("summary", "N/A")
+
+            # alertname 기준 중복 방지 (같은 이름이면 30분 내 재분석 안 함)
+            if is_recently_analyzed(cache, alert_name):
+                print(f"[SKIP] {alert_name} — 30분 내 이미 분석됨")
+                continue
+
+            # 같은 실행 내 alertname 중복 스킵
+            if alert_name in seen_alert_names:
+                print(f"[SKIP] {alert_name} — 같은 실행 내 이미 분석함")
+                continue
+
+            print(f"[ANALYZING] {alert_name}: {summary}")
+            analysis = ask_holmes(alert_name, summary, labels)
+            send_to_slack(alert_name, summary, analysis)
+
+            # 캐시에 alertname 기준으로 기록
+            cache[alert_name] = now
+            seen_alert_names.add(alert_name)
+            analyzed_count += 1
+
+            # Rate limit 방지: 요청 사이 15초 대기
+            if i < len(firing) - 1:
+                time.sleep(15)
+
+        # 캐시 저장 (오래된 항목 정리: 2시간 이상 된 것 삭제)
+        cache = {k: v for k, v in cache.items() if (now - v) < 7200}
+        save_cache(cache)
+        print(f"[DONE] {analyzed_count}개 alert 분석 완료.")
+
+    if __name__ == "__main__":
+        main()
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: holmes-alert-analyzer
+  namespace: monitoring
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: robusta-stack-holmes-service-account
+          restartPolicy: Never
+          containers:
+            - name: analyzer
+              image: python:3.11-slim
+              command: ["python3", "/scripts/analyze.py"]
+              env:
+                - name: ALERTMANAGER_URL
+                  value: "http://monitoring-stack-kube-prom-alertmanager:9093"
+                - name: HOLMES_URL
+                  value: "http://robusta-stack-holmes:80"
+                - name: SLACK_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: holmes-slack-webhook
+                      key: url
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+          volumes:
+            - name: script
+              configMap:
+                name: holmes-alert-analyzer
+          tolerations:
+            - key: CriticalAddonsOnly
+              operator: Exists
+              effect: NoSchedule
