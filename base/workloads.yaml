@@ -12,7 +12,7 @@ metadata:
   name: auth-service
   namespace: baselink-dev
   annotations:
-    secret.reloader.stakater.com/reload: "backend-secret"
+    secret.reloader.stakater.com/reload: "backend-secret,flyway-secret"
 spec:
   selector:
     matchLabels:
@@ -52,6 +52,18 @@ spec:
               value: "2"
             - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
               value: "1"
+            - name: SPRING_FLYWAY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: flyway-secret
+                  key: SPRING_FLYWAY_USER
+                  optional: true
+            - name: SPRING_FLYWAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: flyway-secret
+                  key: SPRING_FLYWAY_PASSWORD
+                  optional: true
           envFrom:
             - configMapRef:
                 name: backend-config
