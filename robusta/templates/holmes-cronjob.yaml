@@ -54,7 +54,7 @@ data:
     DEDUP_SECONDS = 1800  # 30분
 
     # 분석 제외할 alert (노이즈/시스템용/EKS 관리형 false positive)
-    EXCLUDED_ALERTS = {"Watchdog", "InfoInhibitor", "KubeSchedulerDown", "KubeControllerManagerDown", "KubeHpaMaxedOut", "KubeletTooManyPods"}
+    EXCLUDED_ALERTS = {"Watchdog", "InfoInhibitor", "KubeSchedulerDown", "KubeControllerManagerDown", "KubeHpaMaxedOut", "KubeletTooManyPods", "TargetDown"}
 
     # severity가 warning 또는 critical인 것만 분석
     ALLOWED_SEVERITIES = {"warning", "critical"}
@@ -137,7 +137,7 @@ data:
             return []
 
     def ask_holmes(alert_name, summary, labels):
-        question = f"다음 Kubernetes alert를 한국어로 분석해줘. alert 이름: '{alert_name}', 요약: {summary}, 라벨: {json.dumps(labels)}. 근본 원인과 해결 방법을 한국어로 설명해줘. 응답에 <result> 태그를 붙이지 마."
+        question = f"다음 Kubernetes alert를 한국어로 분석해줘. alert 이름: '{alert_name}', 요약: {summary}, 라벨: {json.dumps(labels)}. 주의: 'instance', 'pod', 'container', 'job' 라벨은 메트릭을 수집한 exporter 정보일 뿐 문제의 원인이 아닐 수 있어. 실제 문제가 발생한 대상(예: dimension_ 라벨에 명시된 리소스)을 기준으로 분석해줘. 근본 원인과 해결 방법을 한국어로 설명해줘. 응답에 <result> 태그를 붙이지 마."
         data = json.dumps({
             "ask": question,
             "resource": {
@@ -212,11 +212,19 @@ data:
 
         print(f"[INFO] {len(firing)}개 firing alert 발견. 중복 체크 후 분석 시작...")
 
+        # 같은 alertname은 1개만 분석 (fingerprint 다르더라도)
+        seen_alert_names = set()
+
         for i, alert in enumerate(firing):
             labels = alert.get("labels", {})
             alert_name = labels.get("alertname", "Unknown")
             fingerprint = alert.get("fingerprint", alert_name)
             summary = alert.get("annotations", {}).get("summary", "N/A")
+
+            # 같은 alertname 중복 스킵
+            if alert_name in seen_alert_names:
+                print(f"[SKIP] {alert_name} (fingerprint={fingerprint}) — 같은 alertname 이미 분석함")
+                continue
 
             if is_recently_analyzed(cache, fingerprint):
                 print(f"[SKIP] {alert_name} (fingerprint={fingerprint}) — 30분 내 이미 분석됨")
@@ -228,6 +236,7 @@ data:
 
             # 캐시에 기록
             cache[fingerprint] = now
+            seen_alert_names.add(alert_name)
             analyzed_count += 1
 
             # Rate limit 방지: 요청 사이 15초 대기
