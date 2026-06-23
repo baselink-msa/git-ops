@@ -43,8 +43,8 @@ kube-prometheus-stack:
   grafana:
     grafana.ini:
       server:
-        domain: d1z20dvak4bl13.cloudfront.net
-        root_url: "https://d1z20dvak4bl13.cloudfront.net/grafana/"
+        domain: baselink.kro.kr
+        root_url: "https://baselink.kro.kr/grafana/"
         serve_from_sub_path: true
       security:
         allow_embedding: true
