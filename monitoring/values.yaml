@@ -5,7 +5,7 @@ kube-prometheus-stack:
   grafana:
     grafana.ini:
       server:
-        domain: d1z20dvak4bl13.cloudfront.net  # 실제 CloudFront 도메인으로 교체
-        root_url: "https://d1z20dvak4bl13.cloudfront.net/grafana/"
+        domain: baselink.kro.kr
+        root_url: "https://baselink.kro.kr/grafana/"
         serve_from_sub_path: true
     adminPassword: "Password123!"  # 원하는 비밀번호로 변경
