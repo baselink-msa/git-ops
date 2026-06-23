@@ -118,11 +118,11 @@ data:
         except Exception as e:
             print(f"[WARN] 캐시 저장 실패: {e}")
 
-    def is_recently_analyzed(cache, fingerprint):
-        """30분 내 분석한 alert인지 확인"""
-        if fingerprint not in cache:
+    def is_recently_analyzed(cache, alert_name):
+        """30분 내 분석한 alertname인지 확인"""
+        if alert_name not in cache:
             return False
-        last_time = cache[fingerprint]
+        last_time = cache[alert_name]
         now = datetime.now(timezone.utc).timestamp()
         return (now - last_time) < DEDUP_SECONDS
 
@@ -218,24 +218,24 @@ data:
         for i, alert in enumerate(firing):
             labels = alert.get("labels", {})
             alert_name = labels.get("alertname", "Unknown")
-            fingerprint = alert.get("fingerprint", alert_name)
             summary = alert.get("annotations", {}).get("summary", "N/A")
 
-            # 같은 alertname 중복 스킵
-            if alert_name in seen_alert_names:
-                print(f"[SKIP] {alert_name} (fingerprint={fingerprint}) — 같은 alertname 이미 분석함")
+            # alertname 기준 중복 방지 (같은 이름이면 30분 내 재분석 안 함)
+            if is_recently_analyzed(cache, alert_name):
+                print(f"[SKIP] {alert_name} — 30분 내 이미 분석됨")
                 continue
 
-            if is_recently_analyzed(cache, fingerprint):
-                print(f"[SKIP] {alert_name} (fingerprint={fingerprint}) — 30분 내 이미 분석됨")
+            # 같은 실행 내 alertname 중복 스킵
+            if alert_name in seen_alert_names:
+                print(f"[SKIP] {alert_name} — 같은 실행 내 이미 분석함")
                 continue
 
             print(f"[ANALYZING] {alert_name}: {summary}")
             analysis = ask_holmes(alert_name, summary, labels)
             send_to_slack(alert_name, summary, analysis)
 
-            # 캐시에 기록
-            cache[fingerprint] = now
+            # 캐시에 alertname 기준으로 기록
+            cache[alert_name] = now
             seen_alert_names.add(alert_name)
             analyzed_count += 1
 
