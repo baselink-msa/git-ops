@@ -137,7 +137,29 @@ data:
             return []
 
     def ask_holmes(alert_name, summary, labels):
-        question = f"다음 Kubernetes alert를 한국어로 분석해줘. alert 이름: '{alert_name}', 요약: {summary}, 라벨: {json.dumps(labels)}. 주의: 'instance', 'pod', 'container', 'job' 라벨은 메트릭을 수집한 exporter 정보일 뿐 문제의 원인이 아닐 수 있어. 실제 문제가 발생한 대상(예: dimension_ 라벨에 명시된 리소스)을 기준으로 분석해줘. 근본 원인과 해결 방법을 한국어로 설명해줘. 응답에 <result> 태그를 붙이지 마."
+        question = f"""다음 Kubernetes alert를 분석해줘.
+
+alert: '{alert_name}'
+요약: {summary}
+라벨: {json.dumps(labels, ensure_ascii=False)}
+
+[분석 규칙 - 반드시 따를 것]
+
+1. 라벨을 재진술하지 마. 사용 가능한 도구(kubectl, prometheus 쿼리)를 적극 사용해서 실제 원인을 조사해.
+2. pod/container/instance/job 라벨이 exporter(yace, node-exporter, kube-state-metrics, prometheus)를 가리키면, 그건 데이터 수집 출처일 뿐 원인이 아니야. 무시해.
+3. dimension_TargetGroup 이름(예: k8s-baselink-gameserv-...)에서 실제 K8s 서비스/Deployment를 추론하고, 그 워크로드의 Pod 상태, 재시작 이력, 최근 로그를 조회해.
+
+[alertname별 조사 우선순위]
+- ALBUnhealthyHost/TargetDown: dimension_TargetGroup → K8s 워크로드 추론 → Pod 상태/이벤트/로그
+- NodeMemoryHighUtilization/NodeSystemSaturation: 해당 노드의 Pod 리소스 사용량 top 확인
+- CrashLoopBackOff/High5xxRate: 관련 워크로드 로그에서 에러 패턴 확인
+
+[답변 형식 - 한국어, 5~8줄 이내]
+1. 현상: (무엇이 문제인지 1줄)
+2. 원인: (실제 조사 결과 기반, 추측 금지)
+3. 조치: (구체적 행동 1~2개)
+
+조사해도 원인을 못 찾으면 추측하지 말고 "확인 필요: ___"라고 명시해. 응답에 <result> 태그 붙이지 마."""
         data = json.dumps({
             "ask": question,
             "resource": {
