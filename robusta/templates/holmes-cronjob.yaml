@@ -53,8 +53,8 @@ data:
     CACHE_CM_NAMESPACE = "monitoring"
     DEDUP_SECONDS = 1800  # 30분
 
-    # 분석 제외할 alert (노이즈/시스템용)
-    EXCLUDED_ALERTS = {"Watchdog", "InfoInhibitor"}
+    # 분석 제외할 alert (노이즈/시스템용/EKS 관리형 false positive)
+    EXCLUDED_ALERTS = {"Watchdog", "InfoInhibitor", "KubeSchedulerDown", "KubeControllerManagerDown", "KubeHpaMaxedOut", "KubeletTooManyPods"}
 
     # severity가 warning 또는 critical인 것만 분석
     ALLOWED_SEVERITIES = {"warning", "critical"}
