@@ -35,11 +35,12 @@ data:
   analyze.py: |
     #!/usr/bin/env python3
     """
-    Firing alert를 Alertmanager에서 가져와 Holmes에 분석 요청 후 Slack으로 전송.
+    Firing alert를 Alertmanager에서 가져와 Holmes에 분석 요청 후 Slack/Jira로 전송.
     30분 내 동일 alert 재분석 방지 (ConfigMap 기반 중복 체크).
     """
     import json
     import os
+    import base64
     import urllib.request
     import urllib.error
     import time
@@ -49,6 +50,11 @@ data:
     ALERTMANAGER_URL = os.environ.get("ALERTMANAGER_URL", "http://monitoring-stack-kube-prom-alertmanager:9093")
     HOLMES_URL = os.environ.get("HOLMES_URL", "http://robusta-stack-holmes:80")
     SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
+    JIRA_BASE_URL = os.environ.get("JIRA_BASE_URL", "https://mzcbaselink.atlassian.net")
+    JIRA_EMAIL = os.environ.get("JIRA_EMAIL", "")
+    JIRA_API_TOKEN = os.environ.get("JIRA_API_TOKEN", "")
+    JIRA_PROJECT_KEY = "SCRUM"
+    JIRA_PARENT_KEY = "SCRUM-89"
     CACHE_CM_NAME = "holmes-analyzed-cache"
     CACHE_CM_NAMESPACE = "monitoring"
     DEDUP_SECONDS = 1800  # 30분
@@ -70,7 +76,6 @@ data:
             req = urllib.request.Request(url, headers={
                 "Authorization": f"Bearer {token}",
             })
-            import ssl
             ctx = ssl.create_default_context(cafile=ca_path)
             with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
                 cm = json.loads(resp.read().decode())
@@ -86,7 +91,6 @@ data:
         try:
             with open(token_path) as f:
                 token = f.read().strip()
-            import ssl
             ctx = ssl.create_default_context(cafile=ca_path)
             cache_json = json.dumps(cache)
             body = json.dumps({
@@ -96,7 +100,6 @@ data:
                 "data": {"cache": cache_json}
             }).encode()
 
-            # Try PATCH first (update), fall back to POST (create)
             url = f"https://kubernetes.default.svc/api/v1/namespaces/{CACHE_CM_NAMESPACE}/configmaps/{CACHE_CM_NAME}"
             req = urllib.request.Request(url, data=body, method="PUT", headers={
                 "Authorization": f"Bearer {token}",
@@ -106,7 +109,6 @@ data:
                 urllib.request.urlopen(req, timeout=10, context=ctx)
             except urllib.error.HTTPError as e:
                 if e.code == 404:
-                    # ConfigMap doesn't exist, create it
                     url = f"https://kubernetes.default.svc/api/v1/namespaces/{CACHE_CM_NAMESPACE}/configmaps"
                     req = urllib.request.Request(url, data=body, method="POST", headers={
                         "Authorization": f"Bearer {token}",
@@ -135,6 +137,14 @@ data:
         except Exception as e:
             print(f"[ERROR] Alertmanager 조회 실패: {e}")
             return []
+
+    def infer_service_name(alert_name, labels):
+        """라벨에서 실제 서비스명을 추론 (exporter 라벨 무시)"""
+        for key in ("dimension_TargetGroup", "service", "namespace", "job"):
+            val = labels.get(key, "")
+            if val and "exporter" not in val.lower() and "yace" not in val.lower():
+                return val
+        return labels.get("namespace", "unknown")
 
     def ask_holmes(alert_name, summary, labels):
         labels_str = json.dumps(labels, ensure_ascii=False)
@@ -184,26 +194,146 @@ data:
         except Exception as e:
             return f"Holmes 분석 실패: {e}"
 
-    def send_to_slack(alert_name, summary, analysis):
+    def parse_analysis_sections(analysis):
+        """'현상/원인/조치' 형식 파싱. 실패하면 빈 dict 반환 (fallback은 호출부에서 처리)"""
+        sections = {"symptom": "", "cause": "", "action": ""}
+        lines = analysis.split("\n")
+        current = None
+        for line in lines:
+            stripped = line.strip()
+            head = stripped[:6]
+            if "현상" in head or stripped.startswith("1."):
+                current = "symptom"
+                rest = stripped.split("=", 1)[-1].strip() if "=" in stripped else (stripped.split(":", 1)[-1].strip() if ":" in stripped else "")
+                if rest:
+                    sections[current] += rest + "\n"
+                continue
+            elif "원인" in head or stripped.startswith("2."):
+                current = "cause"
+                rest = stripped.split("=", 1)[-1].strip() if "=" in stripped else (stripped.split(":", 1)[-1].strip() if ":" in stripped else "")
+                if rest:
+                    sections[current] += rest + "\n"
+                continue
+            elif "조치" in head or stripped.startswith("3."):
+                current = "action"
+                rest = stripped.split("=", 1)[-1].strip() if "=" in stripped else (stripped.split(":", 1)[-1].strip() if ":" in stripped else "")
+                if rest:
+                    sections[current] += rest + "\n"
+                continue
+            if current and stripped:
+                sections[current] += stripped + "\n"
+        sections = {k: v.strip() for k, v in sections.items()}
+        return sections
+
+    def create_jira_issue(alert_name, labels, analysis):
+        if not JIRA_EMAIL or not JIRA_API_TOKEN:
+            print("[SKIP] Jira 자격증명 미설정")
+            return None
+        try:
+            service_name = infer_service_name(alert_name, labels)
+            summary_text = f"[장애] {alert_name} - {service_name}"
+            description_text = (
+                f"AI 분석 결과\n\n{analysis}\n\n"
+                f"---\nAlert Labels\n{json.dumps(labels, indent=2, ensure_ascii=False)}"
+            )
+            payload = {
+                "fields": {
+                    "project": {"key": JIRA_PROJECT_KEY},
+                    "parent": {"key": JIRA_PARENT_KEY},
+                    "summary": summary_text[:255],
+                    "description": {
+                        "type": "doc",
+                        "version": 1,
+                        "content": [
+                            {
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": description_text[:30000]}]
+                            }
+                        ]
+                    },
+                    "issuetype": {"name": "Task"},
+                    "labels": ["auto-incident"]
+                }
+            }
+            auth_str = base64.b64encode(f"{JIRA_EMAIL}:{JIRA_API_TOKEN}".encode()).decode()
+            data = json.dumps(payload).encode()
+            req = urllib.request.Request(
+                f"{JIRA_BASE_URL}/rest/api/3/issue",
+                data=data,
+                headers={
+                    "Authorization": f"Basic {auth_str}",
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                result = json.loads(resp.read().decode())
+                issue_key = result.get("key", "")
+                issue_url = f"{JIRA_BASE_URL}/browse/{issue_key}"
+                print(f"[JIRA] 이슈 생성 완료: {issue_key}")
+                return issue_url
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode()
+            print(f"[WARN] Jira 이슈 생성 실패 (HTTP {e.code}): {error_body}")
+            return None
+        except Exception as e:
+            print(f"[WARN] Jira 이슈 생성 실패: {e}")
+            return None
+
+    def send_to_slack(alert_name, summary, analysis, labels, jira_url=None):
         if not SLACK_WEBHOOK_URL:
             print(f"[SKIP] SLACK_WEBHOOK_URL 미설정. 콘솔 출력:\n{analysis}")
             return
-        payload = {
-            "blocks": [
-                {
-                    "type": "header",
-                    "text": {"type": "plain_text", "text": f"🔍 AI Alert 분석: {alert_name}"}
-                },
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": f"*Summary:* {summary}"}
-                },
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": f"*AI 분석 결과:*\n{analysis[:2900]}"}
-                }
-            ]
-        }
+
+        severity = labels.get("severity", "warning")
+        emoji = "🔴" if severity == "critical" else "🟡"
+        service_name = infer_service_name(alert_name, labels)
+        detected_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+        sections = parse_analysis_sections(analysis)
+        has_parsed = any(sections.values())
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f"{emoji} 장애 감지: {alert_name}"}
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {"type": "mrkdwn", "text": f"*Severity:*\n{severity}"},
+                    {"type": "mrkdwn", "text": f"*Service:*\n{service_name}"},
+                    {"type": "mrkdwn", "text": f"*Detected:*\n{detected_time}"},
+                    {"type": "mrkdwn", "text": f"*Summary:*\n{summary}"},
+                ]
+            },
+            {"type": "divider"},
+        ]
+
+        if has_parsed:
+            if sections.get("symptom"):
+                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"📋 *현상*\n{sections['symptom'][:1000]}"}})
+            if sections.get("cause"):
+                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"🔍 *원인*\n{sections['cause'][:1000]}"}})
+            if sections.get("action"):
+                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"🛠 *조치*\n{sections['action'][:1000]}"}})
+        else:
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"*AI 분석 결과:*\n{analysis[:2500]}"}})
+
+        if jira_url:
+            blocks.append({"type": "divider"})
+            blocks.append({
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "📌 Jira 티켓 보기"},
+                        "url": jira_url
+                    }
+                ]
+            })
+
+        payload = {"blocks": blocks}
         data = json.dumps(payload).encode()
         req = urllib.request.Request(
             SLACK_WEBHOOK_URL,
@@ -229,14 +359,12 @@ data:
             print("[INFO] 분석할 firing alert 없음.")
             return
 
-        # 중복 분석 방지: 캐시 로드
         cache = get_cache()
         now = datetime.now(timezone.utc).timestamp()
         analyzed_count = 0
 
         print(f"[INFO] {len(firing)}개 firing alert 발견. 중복 체크 후 분석 시작...")
 
-        # 같은 alertname은 1개만 분석 (fingerprint 다르더라도)
         seen_alert_names = set()
 
         for i, alert in enumerate(firing):
@@ -244,30 +372,26 @@ data:
             alert_name = labels.get("alertname", "Unknown")
             summary = alert.get("annotations", {}).get("summary", "N/A")
 
-            # alertname 기준 중복 방지 (같은 이름이면 30분 내 재분석 안 함)
             if is_recently_analyzed(cache, alert_name):
                 print(f"[SKIP] {alert_name} — 30분 내 이미 분석됨")
                 continue
 
-            # 같은 실행 내 alertname 중복 스킵
             if alert_name in seen_alert_names:
                 print(f"[SKIP] {alert_name} — 같은 실행 내 이미 분석함")
                 continue
 
             print(f"[ANALYZING] {alert_name}: {summary}")
             analysis = ask_holmes(alert_name, summary, labels)
-            send_to_slack(alert_name, summary, analysis)
+            jira_url = create_jira_issue(alert_name, labels, analysis)
+            send_to_slack(alert_name, summary, analysis, labels, jira_url)
 
-            # 캐시에 alertname 기준으로 기록
             cache[alert_name] = now
             seen_alert_names.add(alert_name)
             analyzed_count += 1
 
-            # Rate limit 방지: 요청 사이 15초 대기
             if i < len(firing) - 1:
                 time.sleep(15)
 
-        # 캐시 저장 (오래된 항목 정리: 2시간 이상 된 것 삭제)
         cache = {k: v for k, v in cache.items() if (now - v) < 7200}
         save_cache(cache)
         print(f"[DONE] {analyzed_count}개 alert 분석 완료.")
@@ -306,6 +430,21 @@ spec:
                     secretKeyRef:
                       name: holmes-slack-webhook
                       key: url
+                - name: JIRA_EMAIL
+                  valueFrom:
+                    secretKeyRef:
+                      name: jira-credentials
+                      key: email
+                - name: JIRA_API_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: jira-credentials
+                      key: api-token
+                - name: JIRA_BASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: jira-credentials
+                      key: base-url
               volumeMounts:
                 - name: script
                   mountPath: /scripts
