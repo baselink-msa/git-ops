@@ -68,6 +68,11 @@ robusta:
   # ─── 자동 AI 분석 Playbook ───
   # CronJob(holmes-alert-analyzer)이 이 역할을 대체하므로 비활성화
   customPlaybooks: []
+  disabledPlaybooks:
+    - CrashLoopBackOff
+    - ImagePullBackOff
+    - PodEvicted
+    - PodOOMKill
 
   # ─── 시스템 노드 배치 ───
   tolerations:
