@@ -130,6 +130,17 @@ data:
         now = datetime.now(timezone.utc).timestamp()
         return (now - last_time) < DEDUP_SECONDS
 
+    def get_alert_cache_key(alert):
+        labels = alert.get("labels", {})
+        alert_name = labels.get("alertname", "Unknown")
+        fingerprint = alert.get("fingerprint", "")
+        starts_at = alert.get("startsAt", "")
+        if fingerprint:
+            return f"{alert_name}:{fingerprint}"
+        if starts_at:
+            return f"{alert_name}:{starts_at}"
+        return alert_name
+
     def get_firing_alerts():
         url = f"{ALERTMANAGER_URL}/api/v2/alerts?active=true"
         req = urllib.request.Request(url)
@@ -372,11 +383,6 @@ data:
                     f"⏰ *Detected:* {detected_time}"
                 )}
             },
-            {"type": "divider"},
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": f"📋 *요약*\n{symptom[:1000]}"}
-            },
         ]
 
         if jira_url:
@@ -445,18 +451,19 @@ data:
 
         print(f"[INFO] {len(firing)}개 firing alert 발견. 중복 체크 후 분석 시작...")
 
-        seen_alert_names = set()
+        seen_alert_keys = set()
 
         for i, alert in enumerate(firing):
             labels = alert.get("labels", {})
             alert_name = labels.get("alertname", "Unknown")
             summary = alert.get("annotations", {}).get("summary", "N/A")
+            cache_key = get_alert_cache_key(alert)
 
-            if is_recently_analyzed(cache, alert_name):
+            if is_recently_analyzed(cache, cache_key):
                 print(f"[SKIP] {alert_name} — 30분 내 이미 분석됨")
                 continue
 
-            if alert_name in seen_alert_names:
+            if cache_key in seen_alert_keys:
                 print(f"[SKIP] {alert_name} — 같은 실행 내 이미 분석함")
                 continue
 
@@ -465,8 +472,8 @@ data:
             jira_url = create_jira_issue(alert_name, labels, analysis)
             send_to_slack(alert_name, summary, analysis, labels, jira_url)
 
-            cache[alert_name] = now
-            seen_alert_names.add(alert_name)
+            cache[cache_key] = now
+            seen_alert_keys.add(cache_key)
             analyzed_count += 1
 
             if i < len(firing) - 1:
