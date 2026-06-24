@@ -1,0 +1,75 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # This PostSync hook creates the initial MSK Serverless topics used by the
+  # Baselink event streaming platform. Merge/apply the Terraform permission
+  # change that grants kafka-cluster:CreateTopic before syncing this Job.
+  name: kafka-topic-bootstrap
+  namespace: baselink-dev
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kafka-topic-bootstrap
+        app.kubernetes.io/part-of: baselink
+    spec:
+      serviceAccountName: backend-runtime
+      restartPolicy: Never
+      containers:
+        - name: kafka-topic-bootstrap
+          image: apache/kafka:3.7.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BOOTSTRAP
+              value: boot-twqovxpi.c3.kafka-serverless.ap-northeast-2.amazonaws.com:9098
+            - name: AWS_REGION
+              value: ap-northeast-2
+            - name: AWS_DEFAULT_REGION
+              value: ap-northeast-2
+          command:
+            - bash
+            - -lc
+            - |
+              set -euo pipefail
+
+              wget -q https://repo1.maven.org/maven2/software/amazon/msk/aws-msk-iam-auth/2.2.0/aws-msk-iam-auth-2.2.0-all.jar \
+                -O /tmp/aws-msk-iam-auth.jar
+
+              cat >/tmp/client.properties <<'EOF'
+              security.protocol=SASL_SSL
+              sasl.mechanism=AWS_MSK_IAM
+              sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;
+              sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler
+              EOF
+
+              export CLASSPATH=/tmp/aws-msk-iam-auth.jar
+
+              topics=(
+                "ticket.domain.events"
+                "waiting.operational.events"
+                "reservation.lifecycle.events"
+                "capacity.signals"
+                "infra.audit.events"
+              )
+
+              for topic in "${topics[@]}"; do
+                /opt/kafka/bin/kafka-topics.sh \
+                  --bootstrap-server "${BOOTSTRAP}" \
+                  --command-config /tmp/client.properties \
+                  --create \
+                  --if-not-exists \
+                  --topic "${topic}" \
+                  --partitions 3 \
+                  --replication-factor 3
+              done
+
+              /opt/kafka/bin/kafka-topics.sh \
+                --bootstrap-server "${BOOTSTRAP}" \
+                --command-config /tmp/client.properties \
+                --list
