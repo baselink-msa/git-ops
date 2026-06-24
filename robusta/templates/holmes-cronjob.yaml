@@ -50,6 +50,8 @@ data:
     ALERTMANAGER_URL = os.environ.get("ALERTMANAGER_URL", "http://monitoring-stack-kube-prom-alertmanager:9093")
     HOLMES_URL = os.environ.get("HOLMES_URL", "http://robusta-stack-holmes:80")
     SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
+    SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
+    SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL", "#infra-alerts")
     JIRA_BASE_URL = os.environ.get("JIRA_BASE_URL", "https://mzcbaselink.atlassian.net")
     JIRA_EMAIL = os.environ.get("JIRA_EMAIL", "")
     JIRA_API_TOKEN = os.environ.get("JIRA_API_TOKEN", "")
@@ -140,9 +142,36 @@ data:
 
     def infer_service_name(alert_name, labels):
         """라벨에서 실제 서비스명을 추론 (exporter 라벨 무시)"""
-        for key in ("dimension_TargetGroup", "service", "namespace", "job"):
+        known_services = {
+            "auth": "auth-service",
+            "gameserv": "game-service",
+            "game": "game-service",
+            "admin": "admin-service",
+            "waiting": "waiting-room-service",
+            "ticketwo": "ticket-worker-service",
+            "ticket": "ticket-service",
+            "seatlock": "seat-lock-service",
+            "seat": "seat-lock-service",
+            "order": "order-service",
+            "aichat": "ai-chatbot-service",
+            "chatbot": "ai-chatbot-service",
+        }
+
+        hpa_name = labels.get("horizontalpodautoscaler", "")
+        if hpa_name.startswith("keda-hpa-") and hpa_name.endswith("-scaler"):
+            return hpa_name.removeprefix("keda-hpa-").removesuffix("-scaler")
+
+        target_group = labels.get("dimension_TargetGroup", "")
+        if target_group.startswith("k8s-"):
+            target_group_name = target_group.split("/", 1)[0].lower()
+            for token, service in known_services.items():
+                if token in target_group_name:
+                    return service
+
+        for key in ("service", "app", "deployment", "namespace", "job"):
             val = labels.get(key, "")
-            if val and "exporter" not in val.lower() and "yace" not in val.lower():
+            lowered = val.lower()
+            if val and not any(skip in lowered for skip in ("exporter", "yace", "kube-state-metrics", "prometheus")):
                 return val
         return labels.get("namespace", "unknown")
 
@@ -165,12 +194,12 @@ data:
             f"- NodeMemoryHighUtilization/NodeSystemSaturation = 해당 노드의 Pod 리소스 사용량 top 확인\n"
             f"- CrashLoopBackOff/High5xxRate = 관련 워크로드 로그에서 에러 패턴 확인\n"
             f"\n"
-            f"[답변 형식 - 한국어, 5~8줄 이내]\n"
+            f"[답변 형식 - 반드시 한국어로만, 5~8줄 이내]\n"
             f"1. 현상 = 무엇이 문제인지 1줄\n"
             f"2. 원인 = 실제 조사 결과 기반, 추측 금지\n"
             f"3. 조치 = 구체적 행동 1~2개\n"
             f"\n"
-            f"조사해도 원인을 못 찾으면 추측하지 말고 '확인 필요' 항목을 명시해. 응답에 result 태그 붙이지 마."
+            f"영어로 답하지 마. 조사해도 원인을 못 찾으면 추측하지 말고 '확인 필요' 항목을 명시해. 응답에 result 태그 붙이지 마."
         )
         data = json.dumps({
             "ask": question,
@@ -280,48 +309,77 @@ data:
             print(f"[WARN] Jira 이슈 생성 실패: {e}")
             return None
 
-    def send_to_slack(alert_name, summary, analysis, labels, jira_url=None):
+    def slack_api_post(payload):
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(
+            "https://slack.com/api/chat.postMessage",
+            data=data,
+            headers={
+                "Authorization": f"Bearer {SLACK_BOT_TOKEN}",
+                "Content-Type": "application/json; charset=utf-8",
+            }
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            if not result.get("ok"):
+                raise RuntimeError(result.get("error", "unknown Slack API error"))
+            return result
+
+    def slack_webhook_post(blocks, text):
         if not SLACK_WEBHOOK_URL:
-            print(f"[SKIP] SLACK_WEBHOOK_URL 미설정. 콘솔 출력:\n{analysis}")
+            raise RuntimeError("SLACK_WEBHOOK_URL 미설정")
+        data = json.dumps({"text": text, "blocks": blocks}).encode()
+        req = urllib.request.Request(
+            SLACK_WEBHOOK_URL,
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        urllib.request.urlopen(req, timeout=10)
+
+    def send_to_slack(alert_name, summary, analysis, labels, jira_url=None):
+        if not SLACK_BOT_TOKEN and not SLACK_WEBHOOK_URL:
+            print(f"[SKIP] Slack 설정 미설정. 콘솔 출력:\n{analysis}")
             return
 
         severity = labels.get("severity", "warning")
-        emoji = "🔴" if severity == "critical" else "🟡"
+        is_critical = severity == "critical"
+        status_emoji = "🟢" if labels.get("status") == "resolved" else ("🔴" if is_critical else "🟡")
+        priority = "P1" if is_critical else "P2"
+        urgency = "High" if is_critical else "Medium"
         service_name = infer_service_name(alert_name, labels)
-        detected_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        detected_time = datetime.now(timezone.utc).astimezone().strftime("%m/%d %H:%M")
 
         sections = parse_analysis_sections(analysis)
-        has_parsed = any(sections.values())
+        symptom = sections.get("symptom") or summary or "요약 정보 없음"
+        cause = sections.get("cause") or "확인 필요"
+        action = sections.get("action") or "담당자가 추가 확인 필요"
+        title = f"{status_emoji} [{priority}] {service_name} 장애 감지"
+        fallback_text = f"{title} - {symptom}"
 
         blocks = [
             {
-                "type": "header",
-                "text": {"type": "plain_text", "text": f"{emoji} 장애 감지: {alert_name}"}
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"*{title}*"}
             },
             {
                 "type": "section",
-                "fields": [
-                    {"type": "mrkdwn", "text": f"*Severity:*\n{severity}"},
-                    {"type": "mrkdwn", "text": f"*Service:*\n{service_name}"},
-                    {"type": "mrkdwn", "text": f"*Detected:*\n{detected_time}"},
-                    {"type": "mrkdwn", "text": f"*Summary:*\n{summary}"},
-                ]
+                "text": {"type": "mrkdwn", "text": (
+                    f"📦 *Incident type:* Kubernetes Alert\n"
+                    f"🚨 *Priority:* {priority}\n"
+                    f"⚡ *Urgency:* {urgency}\n"
+                    f"🌐 *Service:* `{service_name}`\n"
+                    f"🔔 *Triggered via:* `{alert_name}`\n"
+                    f"⏰ *Detected:* {detected_time}"
+                )}
             },
             {"type": "divider"},
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"📋 *요약*\n{symptom[:1000]}"}
+            },
         ]
 
-        if has_parsed:
-            if sections.get("symptom"):
-                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"📋 *현상*\n{sections['symptom'][:1000]}"}})
-            if sections.get("cause"):
-                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"🔍 *원인*\n{sections['cause'][:1000]}"}})
-            if sections.get("action"):
-                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"🛠 *조치*\n{sections['action'][:1000]}"}})
-        else:
-            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"*AI 분석 결과:*\n{analysis[:2500]}"}})
-
         if jira_url:
-            blocks.append({"type": "divider"})
             blocks.append({
                 "type": "actions",
                 "elements": [
@@ -333,15 +391,37 @@ data:
                 ]
             })
 
-        payload = {"blocks": blocks}
-        data = json.dumps(payload).encode()
-        req = urllib.request.Request(
-            SLACK_WEBHOOK_URL,
-            data=data,
-            headers={"Content-Type": "application/json"}
-        )
+        thread_blocks = [
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"🤖 *AI 자동 분석 요약*\n📋 *현상:* {symptom[:900]}\n🔍 *원인:* {cause[:900]}\n🛠 *조치:* {action[:900]}"}},
+        ]
+
         try:
-            urllib.request.urlopen(req, timeout=10)
+            if SLACK_BOT_TOKEN:
+                try:
+                    result = slack_api_post({
+                        "channel": SLACK_CHANNEL,
+                        "text": fallback_text,
+                        "blocks": blocks,
+                        "unfurl_links": False,
+                        "unfurl_media": False,
+                    })
+                    slack_api_post({
+                        "channel": SLACK_CHANNEL,
+                        "thread_ts": result["ts"],
+                        "text": f"AI 자동 분석 요약: {symptom}",
+                        "blocks": thread_blocks,
+                        "unfurl_links": False,
+                        "unfurl_media": False,
+                    })
+                except Exception as api_error:
+                    if not SLACK_WEBHOOK_URL:
+                        raise
+                    print(f"[WARN] Slack API 전송 실패, webhook fallback 사용: {api_error}")
+                    blocks.extend(thread_blocks)
+                    slack_webhook_post(blocks, fallback_text)
+            else:
+                blocks.extend(thread_blocks)
+                slack_webhook_post(blocks, fallback_text)
             print(f"[OK] Slack 전송 완료: {alert_name}")
         except Exception as e:
             print(f"[ERROR] Slack 전송 실패: {e}")
@@ -430,6 +510,14 @@ spec:
                     secretKeyRef:
                       name: holmes-slack-webhook
                       key: url
+                - name: SLACK_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: robusta-slack-bot
+                      key: slack-token
+                      optional: true
+                - name: SLACK_CHANNEL
+                  value: "#infra-alerts"
                 - name: JIRA_EMAIL
                   valueFrom:
                     secretKeyRef:
