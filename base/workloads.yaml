@@ -13,6 +13,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret,flyway-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
@@ -105,6 +106,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
@@ -167,6 +169,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
@@ -307,6 +310,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
@@ -369,6 +373,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
@@ -446,6 +451,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
@@ -523,6 +529,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
@@ -608,6 +615,7 @@ metadata:
   namespace: baselink-dev
   annotations:
     secret.reloader.stakater.com/reload: "backend-secret"
+    configmap.reloader.stakater.com/reload: "backend-config"
 spec:
   selector:
     matchLabels:
