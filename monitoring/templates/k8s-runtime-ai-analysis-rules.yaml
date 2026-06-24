@@ -1,0 +1,77 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: k8s-runtime-ai-analysis
+  namespace: monitoring
+  labels:
+    release: monitoring-stack
+spec:
+  groups:
+    - name: k8s-runtime.rules
+      rules:
+        - alert: PodOOMKilled
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace!~"kube-system|argocd"}[10m]) > 0
+            and on(namespace, pod, container)
+            kube_pod_container_status_last_terminated_reason{reason="OOMKilled", namespace!~"kube-system|argocd"} == 1
+          for: 0m
+          labels:
+            severity: critical
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "Pod OOMKilled: {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} container={{`{{ $labels.container }}`}}"
+            description: "컨테이너가 메모리 제한 초과로 종료되어 재시작되었습니다."
+
+        - alert: PodCrashLoopBackOff
+          expr: |
+            max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace!~"kube-system|argocd"}[5m]) == 1
+          for: 5m
+          labels:
+            severity: critical
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "Pod CrashLoopBackOff: {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} container={{`{{ $labels.container }}`}}"
+            description: "컨테이너가 반복적으로 실패하며 재시작되고 있습니다."
+
+        - alert: PodImagePullFailure
+          expr: |
+            max_over_time(kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull", namespace!~"kube-system|argocd"}[5m]) == 1
+          for: 5m
+          labels:
+            severity: critical
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "Pod image pull 실패: {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} container={{`{{ $labels.container }}`}}"
+            description: "이미지 태그, 레지스트리 권한, 이미지 pull secret을 확인해야 합니다."
+
+        - alert: DeploymentReplicasUnavailable
+          expr: |
+            kube_deployment_spec_replicas{namespace!~"kube-system|argocd"} > 0
+            and on(namespace, deployment)
+            (
+              kube_deployment_status_replicas_available{namespace!~"kube-system|argocd"}
+              < kube_deployment_spec_replicas{namespace!~"kube-system|argocd"}
+            )
+          for: 10m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "Deployment 가용 replicas 부족: {{`{{ $labels.namespace }}`}}/{{`{{ $labels.deployment }}`}}"
+            description: "Deployment의 사용 가능한 replica 수가 원하는 replica 수보다 적습니다."
+
+        - alert: PodPendingTooLong
+          expr: |
+            max_over_time(kube_pod_status_phase{phase="Pending", namespace!~"kube-system|argocd"}[10m]) == 1
+          for: 10m
+          labels:
+            severity: warning
+            source: ai-analysis
+            team: infra
+          annotations:
+            summary: "Pod Pending 지속: {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}}"
+            description: "스케줄링 실패, 리소스 부족, PVC 바인딩 문제 가능성이 있습니다."
