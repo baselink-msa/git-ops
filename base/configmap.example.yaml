@@ -13,4 +13,13 @@ data:
   SPRING_JPA_HIBERNATE_DDL_AUTO: validate
   SPRING_DATA_REDIS_HOST: baselink-dev-redis.5loe0w.ng.0001.apn2.cache.amazonaws.com
   SPRING_DATA_REDIS_PORT: "6379"
+  KAFKA_ENABLED: "true"
+  KAFKA_BOOTSTRAP_SERVERS: boot-twqovxpi.c3.kafka-serverless.ap-northeast-2.amazonaws.com:9098
+  KAFKA_SECURITY_PROTOCOL: SASL_SSL
+  KAFKA_SASL_MECHANISM: AWS_MSK_IAM
+  KAFKA_TOPIC_TICKET_DOMAIN_EVENTS: ticket.domain.events
+  KAFKA_TOPIC_WAITING_OPERATIONAL_EVENTS: waiting.operational.events
+  KAFKA_TOPIC_RESERVATION_LIFECYCLE_EVENTS: reservation.lifecycle.events
+  KAFKA_TOPIC_CAPACITY_SIGNALS: capacity.signals
+  KAFKA_TOPIC_INFRA_AUDIT_EVENTS: infra.audit.events
   KNOWLEDGE_BASE_ID: <bedrock-knowledge-base-id>
