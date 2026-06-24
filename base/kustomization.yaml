@@ -6,6 +6,7 @@ resources:
   - serviceaccount.yaml
   - workloads.yaml
   - waiting-room-rbac.yaml
+  - kafka-topic-bootstrap-job.yaml
   - services.yaml
   - ingress.yaml
   - keda.yaml
