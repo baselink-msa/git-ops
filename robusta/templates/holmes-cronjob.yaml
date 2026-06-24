@@ -51,7 +51,7 @@ data:
     HOLMES_URL = os.environ.get("HOLMES_URL", "http://robusta-stack-holmes:80")
     SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
     SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
-    SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL", "#infra-alerts")
+    SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL", "infra-alerts")
     JIRA_BASE_URL = os.environ.get("JIRA_BASE_URL", "https://mzcbaselink.atlassian.net")
     JIRA_EMAIL = os.environ.get("JIRA_EMAIL", "")
     JIRA_API_TOKEN = os.environ.get("JIRA_API_TOKEN", "")
@@ -322,7 +322,7 @@ data:
         with urllib.request.urlopen(req, timeout=10) as resp:
             result = json.loads(resp.read().decode())
             if not result.get("ok"):
-                raise RuntimeError(result.get("error", "unknown Slack API error"))
+                raise RuntimeError(f"{result.get('error', 'unknown Slack API error')} (channel={payload.get('channel')})")
             return result
 
     def slack_webhook_post(blocks, text):
@@ -517,7 +517,7 @@ spec:
                       key: slack-token
                       optional: true
                 - name: SLACK_CHANNEL
-                  value: "#infra-alerts"
+                  value: "infra-alerts"
                 - name: JIRA_EMAIL
                   valueFrom:
                     secretKeyRef:
