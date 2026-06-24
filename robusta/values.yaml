@@ -50,10 +50,14 @@ robusta:
     annotations:
       eks.amazonaws.com/role-arn: "arn:aws:iam::740831361032:role/baselink-dev-robusta-bedrock"
 
-  # ─── Robusta 기본 Slack 알림 비활성화 ───
+  # ─── Slack Sink (Secret 참조 방식) ───
+  # Robusta chart는 최소 1개 sink를 요구한다.
   # Holmes 분석/Slack 전송은 templates/holmes-cronjob.yaml의 CronJob이 담당한다.
-  # 여기에 slack_sink를 두면 OOMKilled 같은 Robusta 기본 K8s event 알림도 함께 전송된다.
-  sinksConfig: []
+  sinksConfig:
+    - slack_sink:
+        name: infra_ai_analysis_slack
+        slack_channel: infra-ai-analysis
+        api_key: "{{ env.SLACK_API_KEY }}"
 
   # ─── Prometheus 연동 ───
   enablePrometheusStack: false
