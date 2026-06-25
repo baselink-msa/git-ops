@@ -36,6 +36,7 @@ kube-prometheus-stack:
     adminPassword: "Password123!"
     additionalDataSources:
       - name: Jaeger
+        uid: jaeger
         type: jaeger
         url: http://jaeger.monitoring:16686
         access: proxy
