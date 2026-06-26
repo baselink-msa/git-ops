@@ -26,7 +26,7 @@ images:
   newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
 - name: ticket-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-service
-  newTag: cf0d84dea8f3c217c61f72d39112a722281adef2
+  newTag: f67032bb2c2b1b9d0e282ad7a3a1b10e301edbad
 - name: ticket-worker-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ticket-worker-service
   newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
