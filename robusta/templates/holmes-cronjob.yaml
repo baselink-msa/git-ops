@@ -336,7 +336,7 @@ data:
             issue_key = result.get("key", "")
             issue_url = f"{JIRA_BASE_URL}/browse/{issue_key}"
             print(f"[JIRA] 이슈 생성 완료: {issue_key}")
-            return issue_url
+            return {"key": issue_key, "url": issue_url}
         except urllib.error.HTTPError as e:
             error_body = e.read().decode()
             print(f"[WARN] Jira 이슈 생성 실패 (HTTP {e.code}): {error_body}")
@@ -375,7 +375,7 @@ data:
         )
         urllib.request.urlopen(req, timeout=10)
 
-    def send_to_slack(alert_name, summary, analysis, labels, jira_url=None):
+    def send_to_slack(alert_name, summary, analysis, labels, jira_issue=None):
         if not SLACK_BOT_TOKEN and not SLACK_WEBHOOK_URL:
             print(f"[SKIP] Slack 설정 미설정. 콘솔 출력:\n{analysis}")
             return
@@ -413,13 +413,15 @@ data:
             },
         ]
 
-        if jira_url:
+        if jira_issue:
+            jira_key = jira_issue.get("key", "Jira")
+            jira_url = jira_issue.get("url")
             blocks.append({
                 "type": "actions",
                 "elements": [
                     {
                         "type": "button",
-                        "text": {"type": "plain_text", "text": "📌 Jira 티켓 보기"},
+                        "text": {"type": "plain_text", "text": f"📌 Jira 티켓 보기 ({jira_key})"},
                         "url": jira_url
                     }
                 ]
@@ -502,8 +504,8 @@ data:
 
             print(f"[ANALYZING] {alert_name}: {summary}")
             analysis = ask_holmes(alert_name, summary, labels)
-            jira_url = create_jira_issue(alert_name, labels, analysis)
-            send_to_slack(alert_name, summary, analysis, labels, jira_url)
+            jira_issue = create_jira_issue(alert_name, labels, analysis)
+            send_to_slack(alert_name, summary, analysis, labels, jira_issue)
 
             cache[cache_key] = now
             seen_alert_keys.add(cache_key)
