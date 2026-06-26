@@ -30,6 +30,8 @@ kube-prometheus-stack:
         serve_from_sub_path: true
       security:
         allow_embedding: true
+      users:
+        viewers_can_edit: true
       auth.anonymous:
         enabled: true
         org_role: Viewer
