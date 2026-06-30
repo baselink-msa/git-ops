@@ -22,6 +22,10 @@ kube-prometheus-stack:
       receivers:
         - name: "null"
 
+  prometheus:
+    prometheusSpec:
+      enableRemoteWriteReceiver: true
+
   grafana:
     grafana.ini:
       server:
