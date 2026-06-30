@@ -37,6 +37,10 @@ spec:
           env:
             - name: COLLECTOR_OTLP_ENABLED
               value: "true"
+            - name: SPAN_STORAGE_TYPE
+              value: "memory"
+            - name: MEMORY_MAX_TRACES
+              value: "50000"
           resources:
             requests:
               cpu: 100m
