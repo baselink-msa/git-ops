@@ -1,4 +1,4 @@
-apiVersion: v1
+﻿apiVersion: v1
 kind: ConfigMap
 metadata:
   name: baselink-dashboard-autoscaling-k8s
@@ -28,25 +28,10 @@ data:
       },
       "panels": [
         {
-          "id": 1,
-          "title": "[KEDA] Trigger 메트릭 추이",
+          "id": 2,
+          "title": "[KEDA] Pod Replica 媛쒖닔",
           "type": "timeseries",
           "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "targets": [
-            {
-              "expr": "keda_metrics_adapter_scaler_metrics_value",
-              "legendFormat": "{{ "{{" }} scaledObject {{ "}}" }} / {{ "{{" }} metric {{ "}}" }}",
-              "refId": "A"
-            }
-          ],
-          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
-        },
-        {
-          "id": 2,
-          "title": "[KEDA] Pod Replica 개수",
-          "type": "timeseries",
-          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 0 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             {
@@ -69,7 +54,7 @@ data:
         },
         {
           "id": 3,
-          "title": "[Karpenter] 프로비저닝된 Node 개수",
+          "title": "[Karpenter] ?꾨줈鍮꾩??앸맂 Node 媛쒖닔",
           "type": "timeseries",
           "gridPos": { "h": 7, "w": 12, "x": 0, "y": 7 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -89,7 +74,7 @@ data:
         },
         {
           "id": 4,
-          "title": "[K8s] 컨테이너 CPU 할당량(Limits/Requests) 대비 사용률(%)",
+          "title": "[K8s] 而⑦뀒?대꼫 CPU ?좊떦??Limits/Requests) ?鍮??ъ슜瑜?%)",
           "type": "timeseries",
           "gridPos": { "h": 7, "w": 12, "x": 12, "y": 7 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -109,7 +94,7 @@ data:
         },
         {
           "id": 5,
-          "title": "[K8s] 컨테이너 Memory 할당량(Limits/Requests) 대비 사용률(%)",
+          "title": "[K8s] 而⑦뀒?대꼫 Memory ?좊떦??Limits/Requests) ?鍮??ъ슜瑜?%)",
           "type": "timeseries",
           "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },

@@ -69,6 +69,18 @@ data:
     # severity가 warning 또는 critical인 것만 분석
     ALLOWED_SEVERITIES = {"warning", "critical"}
 
+    def is_excluded_alert(labels):
+        alert_name = labels.get("alertname", "")
+        if alert_name in EXCLUDED_ALERTS:
+            return True
+
+        # Avoid a feedback loop where this analyzer reports on its own failed Jobs.
+        job_name = labels.get("job_name", labels.get("job", ""))
+        if alert_name == "KubeJobFailed" and job_name.startswith("holmes-alert-analyzer"):
+            return True
+
+        return False
+
     def get_cache():
         """Kubernetes API로 ConfigMap에서 이전 분석 기록 조회"""
         token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -472,7 +484,7 @@ data:
         firing = [
             a for a in alerts
             if a.get("status", {}).get("state") == "active"
-            and a.get("labels", {}).get("alertname") not in EXCLUDED_ALERTS
+            and not is_excluded_alert(a.get("labels", {}))
             and a.get("labels", {}).get("severity", "") in ALLOWED_SEVERITIES
         ]
 
@@ -565,16 +577,19 @@ spec:
                     secretKeyRef:
                       name: jira-credentials
                       key: email
+                      optional: true
                 - name: JIRA_API_TOKEN
                   valueFrom:
                     secretKeyRef:
                       name: jira-credentials
                       key: api-token
+                      optional: true
                 - name: JIRA_BASE_URL
                   valueFrom:
                     secretKeyRef:
                       name: jira-credentials
                       key: base-url
+                      optional: true
                 - name: JIRA_PROJECT_KEY
                   valueFrom:
                     secretKeyRef:
