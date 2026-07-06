@@ -8,7 +8,7 @@ resources:
 images:
 - name: admin-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-admin-service
-  newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
+  newTag: 8644a5f2c1801f828dd1977f714cb26d7ab2f97b
 - name: ai-chatbot-service
   newName: 740831361032.dkr.ecr.ap-northeast-2.amazonaws.com/dev-ai-chatbot-service
   newTag: 5f3b2d0e007240bc02c8686f88fcbce23a97a003
