@@ -3,6 +3,9 @@ kind: Service
 metadata:
   name: auth-service
   namespace: baselink-dev
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
 spec:
   type: ClusterIP
   selector:
@@ -18,7 +21,7 @@ metadata:
   name: game-service
   namespace: baselink-dev
   annotations:
-    alb.ingress.kubernetes.io/healthcheck-path: /api/games
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
     alb.ingress.kubernetes.io/success-codes: "200"
 spec:
   type: ClusterIP
@@ -34,6 +37,9 @@ kind: Service
 metadata:
   name: admin-service
   namespace: baselink-dev
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
 spec:
   type: ClusterIP
   selector:
@@ -48,6 +54,9 @@ kind: Service
 metadata:
   name: waiting-room-service
   namespace: baselink-dev
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
 spec:
   type: ClusterIP
   selector:
@@ -76,6 +85,9 @@ kind: Service
 metadata:
   name: seat-lock-service
   namespace: baselink-dev
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
 spec:
   type: ClusterIP
   selector:
@@ -90,6 +102,9 @@ kind: Service
 metadata:
   name: ticket-service
   namespace: baselink-dev
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
 spec:
   type: ClusterIP
   selector:
@@ -126,4 +141,3 @@ spec:
     - name: http
       port: 8000
       targetPort: 8000
-
