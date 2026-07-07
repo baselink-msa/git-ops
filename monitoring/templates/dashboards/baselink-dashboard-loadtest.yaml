@@ -110,7 +110,7 @@ data:
           "description": "ticket, seat-lock, auth, waiting-room, order 서비스 Pod별 CPU request 대비 사용률. HPA/KEDA CPU 70% 기준 확인용",
           "targets": [
             {
-              "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\", pod=~\"(ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}[1m])) / sum by (pod) (kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"cpu\", pod=~\"(ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}) * 100",
+              "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\", pod=~\"(game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}[1m])) / sum by (pod) (kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"cpu\", pod=~\"(game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}) * 100",
               "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
               "refId": "A"
             }
@@ -151,7 +151,7 @@ data:
           "description": "부하테스트 중 KEDA/HPA로 서비스 Pod 수가 늘어나는지 확인",
           "targets": [
             {
-              "expr": "kube_deployment_status_replicas_available{namespace=\"baselink-dev\", deployment=~\"ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service\"}",
+              "expr": "kube_deployment_status_replicas_available{namespace=\"baselink-dev\", deployment=~\"game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service\"}",
               "legendFormat": "{{ "{{" }} deployment {{ "}}" }}",
               "refId": "A"
             }
@@ -204,81 +204,6 @@ data:
             "orientation": "auto",
             "textMode": "auto",
             "colorMode": "value"
-          }
-        },
-        {
-          "id": 6,
-          "title": "[k6] VUs",
-          "type": "timeseries",
-          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 16 },
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "description": "Ansible 시나리오 실행 시 현재 가상 사용자 수와 최대 VU",
-          "targets": [
-            {
-              "expr": "k6_vus",
-              "legendFormat": "VUs",
-              "refId": "A"
-            },
-            {
-              "expr": "k6_vus_max",
-              "legendFormat": "VUs Max",
-              "refId": "B"
-            }
-          ],
-          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-          "options": {
-            "legend": { "displayMode": "list", "placement": "bottom" },
-            "tooltip": { "mode": "multi", "sort": "none" }
-          }
-        },
-        {
-          "id": 7,
-          "title": "[k6] RPS / TPS",
-          "type": "timeseries",
-          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 16 },
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "description": "HTTP 요청 처리량과 k6 iteration 처리량",
-          "targets": [
-            {
-              "expr": "sum(rate(k6_http_reqs_total[1m]))",
-              "legendFormat": "HTTP Requests/s",
-              "refId": "A"
-            },
-            {
-              "expr": "sum(rate(k6_iterations_total[1m]))",
-              "legendFormat": "Iterations/s",
-              "refId": "B"
-            }
-          ],
-          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
-          "options": {
-            "legend": { "displayMode": "list", "placement": "bottom" },
-            "tooltip": { "mode": "multi", "sort": "none" }
-          }
-        },
-        {
-          "id": 8,
-          "title": "[k6] p95 / p99 응답 속도",
-          "type": "timeseries",
-          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 16 },
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "description": "Ansible 기본 games-list 및 예약/좌석 시나리오의 응답 지연 확인",
-          "targets": [
-            {
-              "expr": "k6_http_req_duration_p95",
-              "legendFormat": "p95",
-              "refId": "A"
-            },
-            {
-              "expr": "k6_http_req_duration_p99",
-              "legendFormat": "p99",
-              "refId": "B"
-            }
-          ],
-          "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
-          "options": {
-            "legend": { "displayMode": "list", "placement": "bottom" },
-            "tooltip": { "mode": "multi", "sort": "none" }
           }
         }
       ]
