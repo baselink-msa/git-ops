@@ -14,7 +14,7 @@ data:
       "timezone": "browser",
       "schemaVersion": 39,
       "version": 1,
-      "refresh": "10s",
+      "refresh": "5s",
       "time": { "from": "now-30m", "to": "now" },
       "templating": {
         "list": [
@@ -145,32 +145,39 @@ data:
         {
           "id": 4,
           "title": "[KEDA/K8s] 서비스별 Pod 수",
-          "type": "timeseries",
+          "type": "bargauge",
           "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "description": "부하테스트 중 KEDA/HPA로 서비스 Pod 수가 늘어나는지 확인",
+          "description": "부하테스트 중 KEDA/HPA로 서비스 Pod 수가 늘어나는지 마지막 값을 서비스별 세로 막대로 확인",
           "targets": [
             {
               "expr": "kube_deployment_status_replicas_available{namespace=\"baselink-dev\", deployment=~\"game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service\"}",
               "legendFormat": "{{ "{{" }} deployment {{ "}}" }}",
-              "refId": "A"
+              "refId": "A",
+              "instant": true
             }
           ],
           "fieldConfig": {
             "defaults": {
               "unit": "short",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "stepAfter",
-                "fillOpacity": 10,
-                "showPoints": "never"
+              "min": 0,
+              "max": 10,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 4 },
+                  { "color": "blue", "value": 8 }
+                ]
               }
             },
             "overrides": []
           },
           "options": {
-            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
-            "tooltip": { "mode": "multi", "sort": "desc" }
+            "orientation": "vertical",
+            "displayMode": "basic",
+            "showUnfilled": true,
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }
           }
         },
         {
@@ -204,6 +211,61 @@ data:
             "orientation": "auto",
             "textMode": "auto",
             "colorMode": "value"
+          }
+        },
+        {
+          "id": 6,
+          "title": "[Seat Read] 좌석 조회 응답시간",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "좌석 조회 부하테스트(seats-list.js)에서 game-service의 /api/games/{gameId}/seats 응답시간 증가 구간을 확인",
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{application=\"game-service\", uri=~\".*/seats\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"game-service\", uri=~\".*/seats\"}[1m])) * 1000",
+              "legendFormat": "avg",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"game-service\", uri=~\".*/seats\"}[1m])) by (le)) * 1000",
+              "legendFormat": "p95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"game-service\", uri=~\".*/seats\"}[1m])) by (le)) * 1000",
+              "legendFormat": "p99",
+              "refId": "C"
+            },
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{application=\"game-service\", uri=~\".*/seats\"}[1m]))",
+              "legendFormat": "requests/s",
+              "refId": "D",
+              "hide": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "fillOpacity": 10,
+                "showPoints": "never"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1000 },
+                  { "color": "red", "value": 2000 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
           }
         }
       ]
