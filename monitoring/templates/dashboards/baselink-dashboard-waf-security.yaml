@@ -37,12 +37,12 @@ data:
           "targets": [
             {
               "expr": "sum by (dimension_WebACL, dimension_Rule) (sum_over_time(aws_wafv2_blocked_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}[5m]))",
-              "legendFormat": "{{ \"{{\" }} dimension_WebACL {{ \"}}\" }} / {{ \"{{\" }} dimension_Rule {{ \"}}\" }} blocked",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} / {{ "{{" }} dimension_Rule {{ "}}" }} blocked",
               "refId": "A"
             },
             {
               "expr": "sum by (dimension_WebACL, dimension_Rule) (sum_over_time(aws_wafv2_counted_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}[5m]))",
-              "legendFormat": "{{ \"{{\" }} dimension_WebACL {{ \"}}\" }} / {{ \"{{\" }} dimension_Rule {{ \"}}\" }} counted",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} / {{ "{{" }} dimension_Rule {{ "}}" }} counted",
               "refId": "B"
             }
           ],
@@ -74,12 +74,12 @@ data:
           "targets": [
             {
               "expr": "sum by (dimension_WebACL) (sum_over_time(aws_wafv2_blocked_requests_sum{dimension_Rule=\"ALL\"}[5m]))",
-              "legendFormat": "{{ \"{{\" }} dimension_WebACL {{ \"}}\" }} blocked",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} blocked",
               "refId": "A"
             },
             {
               "expr": "sum by (dimension_WebACL) (sum_over_time(aws_wafv2_counted_requests_sum{dimension_Rule=\"ALL\"}[5m]))",
-              "legendFormat": "{{ \"{{\" }} dimension_WebACL {{ \"}}\" }} counted",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} counted",
               "refId": "B"
             }
           ],
