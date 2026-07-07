@@ -13,7 +13,7 @@ data:
       "tags": ["baselink", "waf", "security"],
       "timezone": "browser",
       "schemaVersion": 39,
-      "version": 2,
+      "version": 3,
       "refresh": "15s",
       "time": { "from": "now-30m", "to": "now" },
       "templating": {
@@ -29,11 +29,11 @@ data:
       "panels": [
         {
           "id": 1,
-          "title": "[WAF] Rule Match Count - Last 5m",
+          "title": "[WAF] Rule별 매치 건수 - 최근 5분",
           "type": "timeseries",
           "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "description": "Shows recent WAF rule matches as a rolling 5-minute count. Use this first during load/security tests to confirm which rule matched immediately.",
+          "description": "부하테스트나 WAF 테스트 직후 어떤 Rule이 매치됐는지 빠르게 확인하기 위한 최근 5분 누적 패널",
           "targets": [
             {
               "expr": "sum by (dimension_WebACL, dimension_Rule) (sum_over_time(aws_wafv2_blocked_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}[5m]))",
@@ -66,11 +66,11 @@ data:
         },
         {
           "id": 2,
-          "title": "[WAF] Blocked / Counted Requests - Last 5m",
+          "title": "[WAF] Blocked / Counted 요청 수 - 최근 5분",
           "type": "timeseries",
           "gridPos": { "h": 8, "w": 24, "x": 0, "y": 10 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "description": "Simple rolling 5-minute request count by WebACL. This focuses on blocked and counted requests only.",
+          "description": "WebACL 기준 최근 5분 동안 차단 또는 Count 처리된 요청 수",
           "targets": [
             {
               "expr": "sum by (dimension_WebACL) (sum_over_time(aws_wafv2_blocked_requests_sum{dimension_Rule=\"ALL\"}[5m]))",
@@ -100,6 +100,136 @@ data:
             "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
             "tooltip": { "mode": "multi", "sort": "desc" }
           }
+        },
+        {
+          "id": 3,
+          "title": "[Network] CloudFront 403 에러율",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 18 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "aws_cloudfront_403_error_rate_average",
+              "legendFormat": "403 Rate",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value"
+          }
+        },
+        {
+          "id": 4,
+          "title": "[WAF] Allowed / Blocked / Counted 요청 수",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 16, "x": 8, "y": 18 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(aws_wafv2_allowed_requests_sum[1m])) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Allowed/s",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(aws_wafv2_blocked_requests_sum[1m])) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Blocked/s",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(rate(aws_wafv2_counted_requests_sum[1m])) by (dimension_WebACL)",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} Counted/s",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          }
+        },
+        {
+          "id": 5,
+          "title": "[WAF] Rule별 매치 건수 - Rate",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "sum(rate(aws_wafv2_blocked_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}[5m])) by (dimension_Rule)",
+              "legendFormat": "{{ "{{" }} dimension_Rule {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "stepAfter",
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "description": "기존 Rule 단위 rate 패널. 최근 테스트 확인은 맨 위의 최근 5분 누적 패널을 우선 사용"
+        },
+        {
+          "id": 6,
+          "title": "[WAF] Sampled Requests (최근 차단 요청 로그)",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 34 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            {
+              "expr": "topk(20, aws_wafv2_blocked_requests_sum)",
+              "legendFormat": "",
+              "refId": "A",
+              "format": "table",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "short" },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [{ "displayName": "Value", "desc": true }]
+          },
+          "description": "Prometheus는 시계열 집계만 가능하므로 실제 요청 헤더/IP 등 원본 로그는 CloudWatch Logs Insights 또는 WAF 콘솔의 Sampled requests에서 확인 필요. 이 패널은 차단량이 많은 항목을 보여주는 근사치"
         }
       ]
     }

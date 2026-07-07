@@ -1,0 +1,275 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baselink-dashboard-loadtest
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  06-loadtest.json: |-
+    {
+      "title": "BaseLink - Load Test",
+      "uid": "baselink-loadtest",
+      "tags": ["baselink", "loadtest", "k6", "waf", "keda"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-30m", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "[WAF] Rule별 매치 건수 - 최근 10분",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "WAF 테스트 직후 어떤 Rule이 매치됐는지 확인하는 최근 10분 요청 수",
+          "targets": [
+            {
+              "expr": "sum by (dimension_WebACL, dimension_Rule) (max_over_time(aws_wafv2_blocked_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}[10m]))",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} / {{ "{{" }} dimension_Rule {{ "}}" }} blocked",
+              "refId": "A"
+            },
+            {
+              "expr": "sum by (dimension_WebACL, dimension_Rule) (max_over_time(aws_wafv2_counted_requests_sum{dimension_Rule!=\"ALL\",dimension_Rule!=\"\"}[10m]))",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} / {{ "{{" }} dimension_Rule {{ "}}" }} counted",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "bars",
+                "lineInterpolation": "stepAfter",
+                "fillOpacity": 35,
+                "showPoints": "never",
+                "stacking": { "mode": "none", "group": "A" }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 2,
+          "title": "[WAF] Blocked / Counted 요청 수 - 최근 10분",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "WebACL 기준 최근 10분 동안 차단 또는 Count 처리된 요청 수",
+          "targets": [
+            {
+              "expr": "sum by (dimension_WebACL) (max_over_time(aws_wafv2_blocked_requests_sum{dimension_Rule=\"ALL\"}[10m]))",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} blocked",
+              "refId": "A"
+            },
+            {
+              "expr": "sum by (dimension_WebACL) (max_over_time(aws_wafv2_counted_requests_sum{dimension_Rule=\"ALL\"}[10m]))",
+              "legendFormat": "{{ "{{" }} dimension_WebACL {{ "}}" }} counted",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "bars",
+                "lineInterpolation": "stepAfter",
+                "fillOpacity": 30,
+                "showPoints": "never",
+                "stacking": { "mode": "none", "group": "A" }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 3,
+          "title": "[KEDA/K8s] Pod별 CPU 평균",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "ticket, seat-lock, auth, waiting-room, order 서비스 Pod별 CPU 평균 사용량",
+          "targets": [
+            {
+              "expr": "avg by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\", pod=~\"(ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}[1m])) * 1000",
+              "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "mcores",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 4,
+          "title": "[KEDA/K8s] 서비스별 Pod 수",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "부하테스트 중 KEDA/HPA로 서비스 Pod 수가 늘어나는지 확인",
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace=\"baselink-dev\", deployment=~\"ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service\"}",
+              "legendFormat": "{{ "{{" }} deployment {{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "stepAfter",
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 5,
+          "title": "[KEDA/K8s] Ready Node 수",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "부하테스트 중 Karpenter/Cluster Autoscaler로 노드 수가 늘어나는지 확인",
+          "targets": [
+            {
+              "expr": "count(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
+              "legendFormat": "Ready Nodes",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value"
+          }
+        },
+        {
+          "id": 6,
+          "title": "[k6] VUs",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "Ansible 시나리오 실행 시 현재 가상 사용자 수와 최대 VU",
+          "targets": [
+            {
+              "expr": "k6_vus",
+              "legendFormat": "VUs",
+              "refId": "A"
+            },
+            {
+              "expr": "k6_vus_max",
+              "legendFormat": "VUs Max",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          }
+        },
+        {
+          "id": 7,
+          "title": "[k6] RPS / TPS",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "HTTP 요청 처리량과 k6 iteration 처리량",
+          "targets": [
+            {
+              "expr": "sum(rate(k6_http_reqs_total[1m]))",
+              "legendFormat": "HTTP Requests/s",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(k6_iterations_total[1m]))",
+              "legendFormat": "Iterations/s",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          }
+        },
+        {
+          "id": 8,
+          "title": "[k6] p95 / p99 응답 속도",
+          "type": "timeseries",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "description": "Ansible 기본 games-list 및 예약/좌석 시나리오의 응답 지연 확인",
+          "targets": [
+            {
+              "expr": "k6_http_req_duration_p95",
+              "legendFormat": "p95",
+              "refId": "A"
+            },
+            {
+              "expr": "k6_http_req_duration_p99",
+              "legendFormat": "p99",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          }
+        }
+      ]
+    }
