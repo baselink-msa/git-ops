@@ -7,6 +7,12 @@ robusta:
   enableHolmesGPT: true
   holmes:
     enablePostProcessing: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
     additionalEnvVars:
       - name: MODEL
         value: "bedrock/anthropic.claude-3-haiku-20240307-v1:0"
