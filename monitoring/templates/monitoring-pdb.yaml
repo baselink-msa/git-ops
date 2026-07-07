@@ -1,0 +1,28 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: prometheus-monitoring-stack
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+      prometheus: monitoring-stack-kube-prom-prometheus
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: alertmanager-monitoring-stack
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: alertmanager
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+      alertmanager: monitoring-stack-kube-prom-alertmanager
