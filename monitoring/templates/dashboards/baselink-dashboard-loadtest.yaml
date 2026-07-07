@@ -103,15 +103,15 @@ data:
         },
         {
           "id": 3,
-          "title": "[KEDA/K8s] Pod별 CPU 사용률",
+          "title": "[KEDA/K8s] 서비스별 CPU 사용률",
           "type": "timeseries",
           "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "description": "ticket, seat-lock, auth, waiting-room, order 서비스 Pod별 CPU request 대비 사용률. HPA/KEDA CPU 70% 기준 확인용",
+          "description": "부하테스트 중 Pod가 늘어나도 서비스 단위로 묶어서 CPU request 대비 사용률을 확인. HPA/KEDA CPU 70% 기준 확인용",
           "targets": [
             {
-              "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\", pod=~\"(game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}[1m])) / sum by (pod) (kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"cpu\", pod=~\"(game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}) * 100",
-              "legendFormat": "{{ "{{" }} pod {{ "}}" }}",
+              "expr": "sum by (service) (label_replace(rate(container_cpu_usage_seconds_total{namespace=\"baselink-dev\", container!=\"\", pod=~\"(game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}[1m]), \"service\", \"$1\", \"pod\", \"^(.+)-[a-z0-9]+-[a-z0-9]+$\")) / sum by (service) (label_replace(kube_pod_container_resource_requests{namespace=\"baselink-dev\", resource=\"cpu\", pod=~\"(game-service|ticket-service|seat-lock-service|auth-service|waiting-room-service|order-service)-.*\"}, \"service\", \"$1\", \"pod\", \"^(.+)-[a-z0-9]+-[a-z0-9]+$\")) * 100",
+              "legendFormat": "{{ "{{" }} service {{ "}}" }}",
               "refId": "A"
             }
           ],
