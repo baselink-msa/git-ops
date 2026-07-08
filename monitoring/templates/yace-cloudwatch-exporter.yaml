@@ -142,7 +142,17 @@ spec:
     metadata:
       labels:
         app: yace-cloudwatch-exporter
+      annotations:
+        karpenter.sh/do-not-disrupt: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     spec:
+      nodeSelector:
+        workload: monitoring
+      tolerations:
+        - key: monitoring
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
       serviceAccountName: yace-cloudwatch-exporter
       containers:
         - name: yace
@@ -217,3 +227,16 @@ spec:
     - port: metrics
       interval: 60s
       path: /metrics
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yace-cloudwatch-exporter
+  namespace: monitoring
+  labels:
+    app: yace-cloudwatch-exporter
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: yace-cloudwatch-exporter

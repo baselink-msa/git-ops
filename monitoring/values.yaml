@@ -4,6 +4,13 @@ kube-prometheus-stack:
 
   alertmanager:
     alertmanagerSpec:
+      nodeSelector:
+        workload: monitoring
+      tolerations:
+        - key: monitoring
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
       resources:
         requests:
           cpu: 50m
@@ -32,6 +39,13 @@ kube-prometheus-stack:
   prometheus:
     prometheusSpec:
       enableRemoteWriteReceiver: true
+      nodeSelector:
+        workload: monitoring
+      tolerations:
+        - key: monitoring
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
       resources:
         requests:
           cpu: 300m
@@ -40,6 +54,13 @@ kube-prometheus-stack:
           memory: 2Gi
 
   prometheusOperator:
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: monitoring
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
     resources:
       requests:
         cpu: 100m
@@ -52,6 +73,13 @@ kube-prometheus-stack:
     podAnnotations:
       karpenter.sh/do-not-disrupt: "true"
       cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: monitoring
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
     resources:
       requests:
         cpu: 100m
@@ -109,3 +137,12 @@ kube-prometheus-stack:
         url: http://jaeger.monitoring:16686
         access: proxy
         isDefault: false
+
+  kube-state-metrics:
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: monitoring
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
